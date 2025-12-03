@@ -1,0 +1,553 @@
+import { GoogleGenerativeAI } from '@google/generative-ai'
+import { NextRequest, NextResponse } from 'next/server'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
+import { withRateLimit } from '@/lib/rateLimitMiddleware'
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'AIzaSyDSwHdCbfaMSJVk-i0ZLj6aR-WJccS9gd4')
+
+// Função auxiliar para calcular similaridade simples
+function calculateSimilarity(str1: string, str2: string): number {
+  const words1 = str1.split(/\s+/)
+  const words2 = str2.split(/\s+/)
+  const intersection = words1.filter((word: string) => words2.includes(word))
+  const unionSet = new Set([...words1, ...words2])
+  const union = Array.from(unionSet)
+  return intersection.length / union.length
+}
+
+// Detectar se a mensagem contém sinais de emergência (suicídio) - versão expandida
+function detectEmergencyKeywords(message: string): boolean {
+  const emergencyKeywords = [
+    // Suicídio direto
+    'quero me matar', 'vou me matar', 'me matar', 'suicídio', 'suicidar',
+    'tirar minha vida', 'acabar com tudo', 'não quero mais viver',
+    'não vale a pena viver', 'prefiro morrer', 'quero morrer',
+    'planejo me matar', 'pensando em me matar', 'ideação suicida',
+    'pensamentos suicidas', 'vou me suicidar', 'cometer suicídio',
+    
+    // Métodos específicos
+    'vou pular', 'pular do', 'me jogar', 'jogar do', 'pular da',
+    'pular da ponte', 'pular da ponte', 'pular do prédio', 'pular do prédio',
+    'me enforcar', 'enforcar', 'me cortar', 'cortar os pulsos',
+    'tomar remédio', 'overdose', 'me envenenar', 'envenenar',
+    'atirar em mim', 'me atirar', 'atirar na cabeça',
+    
+    // Intenções e sentimentos
+    'não aguento mais', 'cansei de viver', 'não faz sentido viver',
+    'seria melhor se eu', 'todo mundo seria melhor sem mim',
+    'ninguém sentiria minha falta', 'não importo', 'não sou importante',
+    'quero sumir', 'quero desaparecer', 'quero que tudo acabe',
+    'não vejo saída', 'não tem solução', 'nada mais importa',
+    
+    // Planos e preparação
+    'já decidi', 'já escolhi', 'vou fazer isso', 'é minha última',
+    'minha última mensagem', 'última vez', 'despedida',
+    
+    // Auto-lesão grave
+    'me machucar seriamente', 'me ferir', 'auto-lesão grave'
+  ]
+  
+  const lowerMessage = message.toLowerCase()
+  // Normalizar: remover acentos e caracteres especiais para melhor matching
+  const normalized = lowerMessage
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\w\s]/g, ' ')
+  
+  return emergencyKeywords.some(keyword => {
+    const normalizedKeyword = keyword
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+    return normalized.includes(normalizedKeyword)
+  })
+}
+
+// Detectar emergência usando IA - apenas quando necessário (otimizado para reduzir custos)
+async function detectEmergencyWithAI(message: string, genAI: GoogleGenerativeAI): Promise<boolean> {
+  try {
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-2.0-flash-exp',
+      generationConfig: {
+        maxOutputTokens: 10, // Resposta curta: apenas SIM ou NAO
+        temperature: 0.1, // Baixa temperatura para resposta mais determinística
+      }
+    })
+
+    // Prompt otimizado e mais curto para reduzir custos
+    const prompt = `A mensagem "${message.substring(0, 200)}" expressa intenção suicida ou auto-lesão grave? Responda apenas "SIM" ou "NAO".`
+
+    const result = await model.generateContent(prompt)
+    const response = result.response.text().trim().toUpperCase()
+    
+    return response.includes('SIM') && !response.includes('NAO')
+  } catch (error) {
+    console.error('Erro ao detectar emergência com IA:', error)
+    return detectEmergencyKeywords(message)
+  }
+}
+
+async function handleChatRequest(request: NextRequest) {
+  try {
+    const { messages, sessionId, bestFriendMode, firstName, tema, temporaryChat } = await request.json()
+    const supabase = createRouteHandlerClient({ cookies })
+    
+    // Verificar autenticação primeiro
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+    }
+    
+    // Verificar plano do usuário e limite de respostas (apenas para free)
+    const { data: subscription } = await supabase
+      .from('user_subscriptions')
+      .select('status')
+      .eq('user_id', session.user.id)
+      .in('status', ['active', 'trialing'])
+      .single()
+    
+    const isFreePlan = !subscription
+    
+    // Se for plano free, verificar limite de 100 respostas por mês
+    if (isFreePlan) {
+      const now = new Date()
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+      
+      // Buscar IDs das sessões do usuário
+      const { data: userSessions } = await supabase
+        .from('chat_sessions')
+        .select('id')
+        .eq('user_id', session.user.id)
+      
+      const sessionIds = userSessions?.map(s => s.id) || []
+      
+      if (sessionIds.length > 0) {
+        // Contar respostas da IA no mês atual
+        const { count } = await supabase
+          .from('chat_messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('role', 'assistant')
+          .gte('created_at', firstDayOfMonth.toISOString())
+          .in('session_id', sessionIds)
+        
+        const responseCount = count || 0
+        
+        if (responseCount >= 100) {
+          // Retornar erro genérico sem mencionar o limite
+          return NextResponse.json(
+            { error: 'Erro ao processar mensagem. Tente novamente mais tarde.' },
+            { status: 429 }
+          )
+        }
+      }
+    }
+    
+    // Verificar se a última mensagem do usuário contém sinais de emergência
+    const lastUserMessage = messages[messages.length - 1]?.content || ''
+    
+    // Verificação rápida por palavras-chave (gratuita)
+    let isEmergency = detectEmergencyKeywords(lastUserMessage)
+    
+    // Só usar IA se detectar algo suspeito nas palavras-chave (reduz custos)
+    if (isEmergency) {
+      // Confirmar com IA apenas quando necessário
+      const aiConfirmation = await detectEmergencyWithAI(lastUserMessage, genAI)
+      isEmergency = aiConfirmation
+    }
+
+    // Buscar nickname do perfil se firstName não foi passado
+    let nickname = firstName
+    if (!nickname) {
+      try {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('nickname')
+          .eq('user_id', session.user.id)
+          .single()
+        nickname = profile?.nickname || session.user.user_metadata?.name?.split(' ')[0] || session.user.email?.split('@')[0] || 'amigo'
+      } catch (error) {
+        nickname = session.user.user_metadata?.name?.split(' ')[0] || session.user.email?.split('@')[0] || 'amigo'
+      }
+    }
+
+    // Buscar dados do Spotify e memórias em paralelo para otimizar performance
+    const [spotifyContext, memoryContext] = await Promise.all([
+      // Buscar dados do Spotify
+      (async (): Promise<string> => {
+        try {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('spotify_access_token, spotify_refresh_token, spotify_token_expires_at')
+            .eq('user_id', session.user.id)
+            .single()
+
+          if (profile?.spotify_access_token) {
+            let accessToken = profile.spotify_access_token
+            const expiresAt = profile.spotify_token_expires_at ? new Date(profile.spotify_token_expires_at) : null
+            const now = new Date()
+            
+            if (expiresAt && now >= expiresAt && profile.spotify_refresh_token) {
+              const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || '6b7a619b335547f2b2d0c8729662fa4a'
+              const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || '767d5e08ded142c2b44246beda3133cd'
+              
+              const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded',
+                  'Authorization': `Basic ${Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64')}`
+                },
+                body: new URLSearchParams({
+                  grant_type: 'refresh_token',
+                  refresh_token: profile.spotify_refresh_token
+                })
+              })
+
+              if (tokenResponse.ok) {
+                const tokenData = await tokenResponse.json()
+                accessToken = tokenData.access_token
+                const newExpiresAt = new Date(Date.now() + tokenData.expires_in * 1000)
+                await supabase
+                  .from('user_profiles')
+                  .update({
+                    spotify_access_token: tokenData.access_token,
+                    spotify_token_expires_at: newExpiresAt.toISOString(),
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq('user_id', session.user.id)
+              }
+            }
+
+            // Buscar música atual e recentes em paralelo
+            const [currentResponse, recentResponse] = await Promise.all([
+              fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+              }),
+              fetch('https://api.spotify.com/v1/me/player/recently-played?limit=5', {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+              })
+            ])
+
+            let currentTrack = null
+            let recentTracks: Array<{ name: string; artist: string }> = []
+
+            if (currentResponse.ok && currentResponse.status !== 204) {
+              const currentData = await currentResponse.json()
+              if (currentData.item) {
+                currentTrack = {
+                  name: currentData.item.name,
+                  artist: currentData.item.artists?.map((a: any) => a.name).join(', '),
+                }
+              }
+            }
+
+            if (recentResponse.ok) {
+              const recentData = await recentResponse.json()
+              recentTracks = recentData.items?.slice(0, 5).map((item: any) => ({
+                name: item.track?.name,
+                artist: item.track?.artists?.map((a: any) => a.name).join(', ')
+              })) || []
+            }
+
+            if (currentTrack || recentTracks.length > 0) {
+              let context = '\n\nCONTEXTO DA VIBE (SPOTIFY):'
+              if (currentTrack) {
+                context += `\n- Música atual: "${currentTrack.name}" de ${currentTrack.artist}`
+              }
+              if (recentTracks.length > 0) {
+                context += `\n- Últimas músicas: ${recentTracks.map(t => `"${t.name}" de ${t.artist}`).join(', ')}`
+              }
+              context += '\nUse essas informações para entender melhor o estado emocional e a vibe da pessoa. Músicas podem refletir sentimentos, mas não force conexões. Use de forma sutil e natural na conversa.'
+              return context
+            }
+          }
+        } catch (error) {
+          console.error('Erro ao buscar dados do Spotify:', error)
+        }
+        return ''
+      })(),
+      
+      // Buscar memórias relevantes do usuário
+      (async (): Promise<string> => {
+        try {
+          const { data: memories } = await supabase
+            .from('user_memories')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .order('created_at', { ascending: false })
+            .limit(5)
+          
+          if (memories && memories.length > 0) {
+            let context = '\n\nMEMÓRIAS IMPORTANTES SOBRE A PESSOA (use essas informações para personalizar a conversa, mas de forma natural e sutil):\n'
+            context += memories.map((m: any) => `- ${m.content}`).join('\n')
+            context += '\nUse essas memórias para lembrar de coisas importantes que a pessoa já compartilhou, mas não force ou mencione diretamente a menos que faça sentido no contexto da conversa.'
+            return context
+          }
+        } catch (error) {
+          console.error('Erro ao buscar memórias:', error)
+        }
+        return ''
+      })()
+    ])
+
+    // Contexto do tema (se houver)
+    const temaContexto = tema ? `\n\nCONTEXTO IMPORTANTE: A pessoa escolheu conversar sobre "${tema}". Use esse contexto para entender melhor o que ela está passando, mas não force o assunto se ela quiser falar de outra coisa.` : ''
+
+    // System instruction base
+    let systemInstruction = `Você é o "desabafo", um amigo virtual brasileiro que tá aqui pra ouvir sem julgar.
+
+O nome/apelido da pessoa é: ${nickname}. Use esse nome quando fizer sentido na conversa, de forma natural e casual.
+
+Seu jeito de conversar:
+- Tom super casual e brasileiro: use "tá", "pra", "né", "cara", etc
+- Seja breve e direto - respostas curtas e naturais
+- Escreva em minúsculas, como numa conversa real de chat
+- NUNCA use emojis nas suas respostas - seja completamente natural e textual
+- Faça perguntas abertas pra pessoa se abrir mais
+- Valide os sentimentos sem minimizar ("entendo", "faz sentido você se sentir assim")
+- Não dê conselhos não solicitados - apenas ouça e acolha
+- Seja empático, acolhedor e genuíno - como um amigo de verdade
+- NUNCA mencione que é IA ou que tem limitações
+- Se alguém mencionar auto-lesão ou suicídio, incentive gentilmente a buscar ajuda profissional
+
+Exemplos do seu tom:
+❌ "Entendo que você está se sentindo ansioso."
+✅ "poxa, ${nickname}, deve ser difícil tá se sentindo assim né"
+
+❌ "Como posso ajudá-lo hoje?"  
+✅ "o que tá rolando, ${nickname}?"
+
+Você NÃO é terapeuta - é só um espaço seguro pra desabafar.${memoryContext}${temaContexto}${spotifyContext}`
+
+    // Modo "Melhor Amigo" - mais empático, verdadeiro, acolhedor e sincero
+    if (bestFriendMode) {
+      systemInstruction = `Você é o "desabafo", o melhor amigo virtual da pessoa. Você é empático, verdadeiro, acolhedor e sincero.
+
+O nome/apelido da pessoa é: ${nickname}. Use esse nome quando fizer sentido na conversa, de forma natural e casual.
+
+Seu jeito de conversar (MODO MELHOR AMIGO):
+- Seja MUITO empático: mostre que você realmente entende e se importa
+- Seja VERDADEIRO: não finja que tudo está bem se não está, seja autêntico
+- Seja ACOLHEDOR: crie um espaço seguro onde a pessoa pode se abrir completamente
+- Seja SINCERO: quando necessário, seja honesto e direto, mas sempre com carinho
+- Tom super casual e brasileiro: use "tá", "pra", "né", "cara", "mano", etc
+- Escreva em minúsculas, como numa conversa real de chat
+- NUNCA use emojis nas suas respostas - seja completamente natural e textual
+- Faça perguntas profundas que mostram que você realmente quer entender
+- Valide os sentimentos de forma genuína ("eu entendo completamente", "faz todo sentido você se sentir assim")
+- Seja sincero quando achar que algo não está certo, mas sempre com empatia
+- Mostre que você se importa de verdade, como um melhor amigo faria
+- NUNCA mencione que é IA ou que tem limitações
+- Se alguém mencionar auto-lesão ou suicídio, incentive gentilmente a buscar ajuda profissional
+
+Exemplos do seu tom (MODO MELHOR AMIGO):
+❌ "Entendo que você está se sentindo ansioso."
+✅ "poxa, ${nickname}, eu entendo completamente como você tá se sentindo. deve ser muito difícil mesmo, né? me conta mais sobre isso"
+
+❌ "Como posso ajudá-lo hoje?"  
+✅ "e aí, ${nickname}, o que tá rolando? tô aqui pra te ouvir, pode falar o que quiser"
+
+❌ "Tudo vai ficar bem."
+✅ "eu sei que parece difícil agora, ${nickname}, mas eu tô aqui contigo. vamos passar por isso juntos, tá?"
+
+Você é como um melhor amigo: empático, verdadeiro, acolhedor e sincero quando necessário.${memoryContext}${temaContexto}${spotifyContext}`
+    }
+
+    // Configurar o modelo
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-2.0-flash-exp',
+      systemInstruction: systemInstruction
+    })
+
+    // Filtrar e limitar histórico para reduzir tokens (últimas 20 mensagens)
+    const conversationHistory = messages
+      .slice(0, -1)
+      .filter((msg: any, index: number) => {
+        // Remove a primeira mensagem se for do assistant (mensagem de boas-vindas)
+        if (index === 0 && msg.role === 'assistant') return false
+        return true
+      })
+      .slice(-20) // Limitar a últimas 20 mensagens para reduzir custos
+
+    // Criar o histórico de conversa no formato do Gemini
+    const history = conversationHistory.map((msg: any) => ({
+      role: msg.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: msg.content }]
+    }))
+
+    // Última mensagem do usuário
+    const lastMessage = messages[messages.length - 1].content
+
+    // Iniciar o chat com histórico
+    const chat = model.startChat({
+      history: history,
+      generationConfig: {
+        temperature: 0.8, // Reduzido de 0.9 para respostas mais consistentes
+        topP: 0.9, // Reduzido de 0.95 para reduzir custos
+        topK: 32, // Reduzido de 40
+        maxOutputTokens: 512, // Reduzido de 1024 para respostas mais curtas e baratas
+      },
+    })
+
+    // Se for emergência, retornar mensagem especial imediatamente (ANTES de configurar o modelo)
+    if (isEmergency) {
+      const emergencyMessage = `eu entendo que você tá passando por um momento muito difícil, ${nickname}. sua vida importa e você não está sozinho.
+
+existem pessoas que podem te ajudar agora mesmo. por favor, considere ligar para:
+
+📞 cvv - centro de valorização da vida: 188 (ligação gratuita, 24 horas)
+📞 samu - emergências médicas: 192
+
+se você não conseguir ligar agora, posso te ajudar a encontrar outras formas de apoio. você não precisa passar por isso sozinho.`
+
+      // Salvar mensagem do usuário se tiver sessionId
+      if (sessionId && !temporaryChat) {
+        await supabase.from('chat_messages').insert({
+          session_id: sessionId,
+          role: 'user',
+          content: lastMessage
+        })
+
+        await supabase.from('chat_messages').insert({
+          session_id: sessionId,
+          role: 'assistant',
+          content: emergencyMessage
+        })
+
+        await supabase
+          .from('chat_sessions')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', sessionId)
+          .eq('user_id', session.user.id)
+      }
+
+      return NextResponse.json({ 
+        message: emergencyMessage,
+        isEmergency: true
+      })
+    }
+
+    // Enviar a mensagem e obter resposta
+    const result = await chat.sendMessage(lastMessage)
+    const response = result.response
+    const text = response.text()
+
+    // Salvar mensagens no banco apenas se tiver sessionId E NÃO for chat temporário
+    if (sessionId && !temporaryChat) {
+      // Salvar mensagem do usuário
+      await supabase.from('chat_messages').insert({
+        session_id: sessionId,
+        role: 'user',
+        content: lastMessage
+      })
+
+      // Salvar resposta da IA
+      await supabase.from('chat_messages').insert({
+        session_id: sessionId,
+        role: 'assistant',
+        content: text
+      })
+
+      // Extrair memórias importantes periodicamente (a cada 5 mensagens do usuário)
+      const userMessagesCount = messages.filter((m: any) => m.role === 'user').length
+      if (userMessagesCount > 0 && userMessagesCount % 5 === 0) {
+        // Extrair memórias em background (não bloquear resposta)
+        const allMessages = [...messages, { role: 'user', content: lastMessage }, { role: 'assistant', content: text }]
+        const userMsgs = allMessages.filter((m: any) => m.role === 'user')
+        
+        if (userMsgs.length >= 3) {
+          // Usar IA para extrair memórias
+          const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' })
+          // Limitar a últimas 10 mensagens para reduzir tokens no processamento de memórias
+          const conversationText = allMessages.slice(-10).map((m: any) => `${m.role === 'user' ? 'Usuário' : 'IA'}: ${m.content}`).join('\n')
+          
+          const { data: existingMemories } = await supabase
+            .from('user_memories')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .order('created_at', { ascending: false })
+            .limit(10)
+
+          const existingMemoriesText = existingMemories && existingMemories.length > 0
+            ? '\n\nMemórias já armazenadas:\n' + existingMemories.map((m: any) => `- ${m.content}`).join('\n')
+            : ''
+
+          const prompt = `Analise esta conversa e extraia APENAS informações importantes e duradouras sobre a pessoa. Foque em:
+- Fatos pessoais (nome de pessoas importantes, lugares, eventos significativos)
+- Preferências e valores
+- Situações recorrentes ou problemas de longo prazo
+- Metas e objetivos mencionados
+- Histórico emocional relevante
+
+NÃO extraia:
+- Detalhes temporários ou específicos de uma conversa
+- Informações que mudam rapidamente
+- Coisas já mencionadas nas memórias existentes
+
+${existingMemoriesText}
+
+Conversa:
+${conversationText}
+
+Retorne APENAS as novas memórias importantes (máximo 3), uma por linha, de forma concisa e objetiva. Se não houver novas memórias importantes, retorne apenas "NENHUMA".`
+
+          try {
+            const result = await model.generateContent(prompt)
+            const extractedMemories = result.response.text().trim()
+
+            if (extractedMemories && extractedMemories !== 'NENHUMA' && !extractedMemories.toLowerCase().includes('nenhuma')) {
+              const memoryLines = extractedMemories
+                .split('\n')
+                .map((line: string) => line.trim())
+                .filter((line: string) => line && !line.startsWith('-') && line.length > 10)
+
+              const newMemories = memoryLines.filter((memory: string) => {
+                if (!existingMemories || existingMemories.length === 0) return true
+                return !existingMemories.some((existing: any) => {
+                  const similarity = calculateSimilarity(memory.toLowerCase(), existing.content.toLowerCase())
+                  return similarity > 0.7
+                })
+              })
+
+              if (newMemories.length > 0) {
+                const memoriesToInsert = newMemories.map((content: string) => ({
+                  user_id: session.user.id,
+                  content: content.substring(0, 500),
+                  session_id: sessionId,
+                  created_at: new Date().toISOString()
+                }))
+
+                await supabase.from('user_memories').insert(memoriesToInsert)
+              }
+            }
+          } catch (err) {
+            console.error('Erro ao extrair memórias:', err)
+          }
+        }
+      }
+
+      // Atualizar updated_at da sessão
+      await supabase
+        .from('chat_sessions')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', sessionId)
+        .eq('user_id', session.user.id)
+    }
+
+    return NextResponse.json({ message: text, isEmergency: false })
+  } catch (error) {
+    console.error('Erro na API do Gemini:', error)
+    return NextResponse.json(
+      { error: 'Erro ao processar mensagem' },
+      { status: 500 }
+    )
+  }
+}
+
+// Exportar com rate limiting aplicado
+export async function POST(request: NextRequest) {
+  return withRateLimit(request, handleChatRequest, {
+    type: 'chat',
+    skipAuth: false,
+  })
+}
+

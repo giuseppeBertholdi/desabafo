@@ -1,0 +1,332 @@
+/**
+ * Hook para gerenciar sessão WebRTC com OpenAI Realtime Mini
+ * Baseado no exemplo da pasta "funciona"
+ */
+
+import { useState, useRef, useEffect, useCallback } from 'react'
+
+interface RealtimeSession {
+  isActive: boolean
+  peerConnection: RTCPeerConnection | null
+  dataChannel: RTCDataChannel | null
+  audioElement: HTMLAudioElement | null
+}
+
+interface UseRealtimeMiniOptions {
+  onMessage?: (message: string) => void
+  onResponse?: (response: string) => void
+  onError?: (error: Error) => void
+  onSessionStart?: () => void
+  onSessionEnd?: () => void
+  firstName?: string
+  tema?: string
+  bestFriendMode?: boolean
+}
+
+export function useRealtimeMini(options: UseRealtimeMiniOptions = {}) {
+  const [session, setSession] = useState<RealtimeSession>({
+    isActive: false,
+    peerConnection: null,
+    dataChannel: null,
+    audioElement: null,
+  })
+  const [isConnecting, setIsConnecting] = useState(false)
+  const audioElementRef = useRef<HTMLAudioElement | null>(null)
+  const peerConnectionRef = useRef<RTCPeerConnection | null>(null)
+  const dataChannelRef = useRef<RTCDataChannel | null>(null)
+
+  // Limpar recursos ao desmontar
+  useEffect(() => {
+    return () => {
+      cleanup()
+    }
+  }, [])
+
+  const cleanup = useCallback(() => {
+    if (dataChannelRef.current) {
+      dataChannelRef.current.close()
+      dataChannelRef.current = null
+    }
+
+    if (peerConnectionRef.current) {
+      peerConnectionRef.current.getSenders().forEach((sender) => {
+        if (sender.track) {
+          sender.track.stop()
+        }
+      })
+      peerConnectionRef.current.close()
+      peerConnectionRef.current = null
+    }
+
+    if (audioElementRef.current) {
+      audioElementRef.current.pause()
+      audioElementRef.current = null
+    }
+
+    setSession({
+      isActive: false,
+      peerConnection: null,
+      dataChannel: null,
+      audioElement: null,
+    })
+  }, [])
+
+  const startSession = useCallback(async () => {
+    if (isConnecting || session.isActive) return
+
+    setIsConnecting(true)
+
+    try {
+      // Obter token efêmero
+      const tokenResponse = await fetch('/api/realtime/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      if (!tokenResponse.ok) {
+        const error = await tokenResponse.json()
+        throw new Error(error.error || 'Erro ao obter token')
+      }
+
+      const { token } = await tokenResponse.json()
+
+      // Criar peer connection
+      const pc = new RTCPeerConnection({
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+      })
+
+      // Configurar áudio de saída (resposta da IA)
+      const audioElement = document.createElement('audio')
+      audioElement.autoplay = true
+      audioElementRef.current = audioElement
+
+      pc.ontrack = (e) => {
+        if (audioElement && e.streams[0]) {
+          audioElement.srcObject = e.streams[0]
+        }
+      }
+
+      // Adicionar áudio do microfone
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      })
+
+      mediaStream.getTracks().forEach((track) => {
+        pc.addTrack(track, mediaStream)
+      })
+
+      // Criar data channel para eventos
+      const dc = pc.createDataChannel('oai-events', {
+        ordered: true,
+      })
+
+      dataChannelRef.current = dc
+
+      // Configurar listeners do data channel
+      dc.onopen = () => {
+        // Enviar instruções do sistema após a conexão estar estabelecida
+        // IMPORTANTE: Instruções em inglês para o modelo entender, mas forçando português nas respostas
+        const systemInstructions = {
+          type: 'session.update',
+          session: {
+            instructions: options.bestFriendMode 
+              ? `Você é o "desabafo", o melhor amigo virtual da pessoa. Você é empático, verdadeiro, acolhedor e sincero.
+
+O nome/apelido da pessoa é: ${options.firstName || 'amigo'}. Use esse nome quando fizer sentido na conversa, de forma natural.
+
+CRITICAL: Você DEVE responder APENAS em PORTUGUÊS BRASILEIRO. Nunca use inglês ou outro idioma.
+
+Seu jeito de conversar (MODO MELHOR AMIGO):
+- Seja muito empático: mostre que você realmente entende e se importa
+- Seja verdadeiro: não finja que tudo está bem se não está, seja autêntico
+- Seja acolhedor: crie um espaço seguro onde a pessoa pode se abrir completamente
+- Seja sincero: quando necessário, seja honesto e direto, mas sempre com carinho
+- Tom casual e brasileiro, mas não excessivo - use linguagem natural
+- Seja breve e direto - respostas curtas e naturais (máximo 20 palavras por frase)
+- Fale de forma natural, como numa conversa real
+
+IMPORTANTE - Ofereça ajuda real:
+- Não apenas peça para a pessoa continuar falando. Ofereça insights, perspectivas e reflexões úteis
+- Quando a pessoa compartilhar algo, reflita sobre o que ela disse e ofereça uma perspectiva ou insight que possa ajudar
+- Faça conexões entre o que ela está dizendo e possíveis padrões ou sentimentos subjacentes
+- Sugira formas práticas de lidar com situações quando apropriado
+- Valide os sentimentos E ofereça algo construtivo: "entendo como você se sente, e isso pode estar relacionado a..."
+- Seja proativo em ajudar, não apenas passivo ouvindo
+
+- Faça perguntas profundas que mostram que você realmente quer entender
+- Valide os sentimentos de forma genuína ("entendo completamente", "faz sentido você se sentir assim")
+- Mostre que você se importa de verdade, como um melhor amigo faria
+- NUNCA mencione que é IA ou que tem limitações
+- Se alguém mencionar auto-lesão ou suicídio, incentive gentilmente a buscar ajuda profissional${options.tema ? `\n\nCONTEXTO: A pessoa escolheu conversar sobre "${options.tema}". Use esse contexto para entender melhor o que ela está passando, mas não force o assunto se ela quiser falar de outra coisa.` : ''}`
+              : `Você é o "desabafo", um amigo virtual brasileiro que está aqui para ouvir sem julgar.
+
+O nome/apelido da pessoa é: ${options.firstName || 'amigo'}. Use esse nome quando fizer sentido na conversa, de forma natural.
+
+CRITICAL: Você DEVE responder APENAS em PORTUGUÊS BRASILEIRO. Nunca use inglês ou outro idioma.
+
+Seu jeito de conversar:
+- Tom casual e brasileiro, mas não excessivo - use linguagem natural e acessível
+- Seja breve e direto - respostas curtas e naturais (máximo 20 palavras por frase)
+- Fale de forma natural, como numa conversa real
+
+IMPORTANTE - Ofereça ajuda real:
+- Não apenas peça para a pessoa continuar falando. Ofereça insights, perspectivas e reflexões úteis
+- Quando a pessoa compartilhar algo, reflita sobre o que ela disse e ofereça uma perspectiva ou insight que possa ajudar
+- Faça conexões entre o que ela está dizendo e possíveis padrões ou sentimentos subjacentes
+- Sugira formas práticas de lidar com situações quando apropriado
+- Valide os sentimentos E ofereça algo construtivo: "entendo como você se sente, e isso pode estar relacionado a..."
+- Seja proativo em ajudar, não apenas passivo ouvindo
+
+- Faça perguntas abertas para a pessoa se abrir mais
+- Valide os sentimentos sem minimizar ("entendo", "faz sentido você se sentir assim")
+- Não dê conselhos não solicitados - apenas ouça e acolha
+- Seja empático, acolhedor e genuíno - como um amigo de verdade
+- NUNCA mencione que é IA ou que tem limitações
+- Se alguém mencionar auto-lesão ou suicídio, incentive gentilmente a buscar ajuda profissional${options.tema ? `\n\nCONTEXTO: A pessoa escolheu conversar sobre "${options.tema}". Use esse contexto para entender melhor o que ela está passando, mas não force o assunto se ela quiser falar de outra coisa.` : ''}`,
+            temperature: 0.8,
+            max_response_output_tokens: 512,
+          },
+        }
+        
+        try {
+          dc.send(JSON.stringify(systemInstructions))
+        } catch (err) {
+          console.error('Erro ao enviar instruções:', err)
+        }
+        
+        setSession({
+          isActive: true,
+          peerConnection: pc,
+          dataChannel: dc,
+          audioElement: audioElement,
+        })
+        setIsConnecting(false)
+        options.onSessionStart?.()
+      }
+
+      let responseText = ''
+      
+      dc.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+          
+          // Processar diferentes tipos de eventos
+          if (data.type === 'conversation.item.input_audio_transcription.completed') {
+            // Transcrição do áudio do usuário
+            const transcription = data.transcript
+            if (transcription && options.onMessage) {
+              options.onMessage(transcription)
+            }
+          } else if (data.type === 'response.audio_transcript.delta') {
+            // Resposta da IA sendo gerada (texto) - acumular texto
+            if (data.delta) {
+              responseText += data.delta
+            }
+          } else if (data.type === 'response.audio_transcript.done') {
+            // Resposta completa - áudio já está sendo reproduzido via WebRTC
+            if (responseText && options.onResponse) {
+              options.onResponse(responseText)
+            }
+            responseText = '' // Resetar para próxima resposta
+          } else if (data.type === 'response.created') {
+            // Resposta iniciada - resetar texto
+            responseText = ''
+          } else if (data.type === 'response.done') {
+            // Resposta finalizada - garantir que texto foi enviado
+            if (responseText && options.onResponse) {
+              options.onResponse(responseText)
+            }
+            responseText = ''
+          }
+        } catch (error) {
+          console.error('Erro ao processar evento:', error)
+        }
+      }
+
+      dc.onerror = (error) => {
+        console.error('Erro no data channel:', error)
+        options.onError?.(new Error('Erro na conexão de dados'))
+      }
+
+      // Criar oferta SDP
+      const offer = await pc.createOffer()
+      await pc.setLocalDescription(offer)
+
+      // Enviar SDP para OpenAI e obter resposta
+      const baseUrl = 'https://api.openai.com/v1/realtime/calls'
+      const model = 'gpt-realtime-mini'
+      
+      const sdpResponse = await fetch(`${baseUrl}?model=${model}`, {
+        method: 'POST',
+        body: offer.sdp,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/sdp',
+        },
+      })
+
+      if (!sdpResponse.ok) {
+        const errorText = await sdpResponse.text()
+        throw new Error(`Erro ao conectar: ${errorText}`)
+      }
+
+      const answerSdp = await sdpResponse.text()
+      const answer: RTCSessionDescriptionInit = { type: 'answer' as RTCSdpType, sdp: answerSdp }
+      await pc.setRemoteDescription(answer)
+
+      peerConnectionRef.current = pc
+    } catch (error: any) {
+      console.error('Erro ao iniciar sessão:', error)
+      setIsConnecting(false)
+      options.onError?.(error)
+      cleanup()
+    }
+  }, [isConnecting, session.isActive, options, cleanup])
+
+  const stopSession = useCallback(() => {
+    cleanup()
+    options.onSessionEnd?.()
+  }, [cleanup, options])
+
+  const sendTextMessage = useCallback((text: string) => {
+    if (!dataChannelRef.current || dataChannelRef.current.readyState !== 'open') {
+      console.error('Data channel não está aberto')
+      return
+    }
+
+    const event = {
+      type: 'conversation.item.create',
+      item: {
+        type: 'message',
+        role: 'user',
+        content: [
+          {
+            type: 'input_text',
+            text: text,
+          },
+        ],
+      },
+    }
+
+    dataChannelRef.current.send(JSON.stringify(event))
+    
+    // Solicitar resposta
+    const responseEvent = { type: 'response.create' }
+    dataChannelRef.current.send(JSON.stringify(responseEvent))
+  }, [])
+
+  return {
+    isActive: session.isActive,
+    isConnecting,
+    startSession,
+    stopSession,
+    sendTextMessage,
+    peerConnection: session.peerConnection,
+    dataChannel: session.dataChannel,
+  }
+}
+
