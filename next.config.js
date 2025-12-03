@@ -14,6 +14,14 @@ const nextConfig = {
   experimental: {
     optimizeCss: true,
   },
+  // Desabilitar erros de ESLint durante build (apenas warnings)
+  eslint: {
+    ignoreDuringBuilds: false,
+  },
+  // Desabilitar erros de TypeScript durante build (apenas warnings)
+  typescript: {
+    ignoreBuildErrors: false,
+  },
   // Headers de segurança e performance
   async headers() {
     return [

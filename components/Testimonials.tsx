@@ -76,7 +76,7 @@ export default function Testimonials() {
                 ))}
               </motion.div>
             <p className="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed font-light text-base">
-              "{testimonial.content}"
+              &ldquo;{testimonial.content}&rdquo;
             </p>
             <div>
               <p className="font-medium text-gray-900 dark:text-white">{testimonial.name}, {testimonial.age}</p>
