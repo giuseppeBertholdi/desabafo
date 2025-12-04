@@ -102,13 +102,47 @@ export async function checkMonthlyLimit(
     let count = 0
     
     if (limitType === 'chat_messages') {
-      const { count: messageCount } = await supabase
+      // Buscar IDs das sessões do usuário
+      const { data: userSessions, error: sessionsError } = await supabase
         .from('chat_sessions')
-        .select('*', { count: 'exact', head: true })
+        .select('id')
         .eq('user_id', userId)
-        .gte('created_at', startOfMonth.toISOString())
       
-      count = messageCount || 0
+      if (sessionsError) {
+        console.warn('Erro ao buscar sessões:', sessionsError.message)
+        // Em caso de erro, permitir (fail open para não bloquear usuários)
+        return {
+          isAuthorized: true,
+          plan,
+          remainingUsage: limit,
+          limit,
+        }
+      }
+
+      const sessionIds = userSessions?.map(s => s.id) || []
+      
+      if (sessionIds.length > 0) {
+        // Contar mensagens do assistente (respostas da IA) no mês atual
+        const { count: messageCount, error: countError } = await supabase
+          .from('chat_messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('role', 'assistant')
+          .in('session_id', sessionIds)
+          .gte('created_at', startOfMonth.toISOString())
+        
+        if (countError) {
+          console.warn('Erro ao contar mensagens:', countError.message)
+          // Em caso de erro, permitir
+          return {
+            isAuthorized: true,
+            plan,
+            remainingUsage: limit,
+            limit,
+          }
+        }
+        
+        count = messageCount || 0
+      }
     } else if (limitType === 'journal_entries') {
       const { count: entryCount } = await supabase
         .from('journal_entries')
