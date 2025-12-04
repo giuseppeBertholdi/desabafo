@@ -7,51 +7,57 @@ export async function GET(request: Request) {
   const code = requestUrl.searchParams.get('code')
 
   if (code) {
-    const supabase = createRouteHandlerClient({ cookies })
-    await supabase.auth.exchangeCodeForSession(code)
-    
-    // Verificar se completou o onboarding
-    const { data: { session } } = await supabase.auth.getSession()
-    if (session) {
+    try {
+      const supabase = createRouteHandlerClient({ cookies })
+      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+      
+      if (exchangeError) {
+        console.error('Erro ao trocar código por sessão:', exchangeError)
+        return NextResponse.redirect(new URL('/login?error=auth_error', request.url))
+      }
+      
+      // Verificar se a sessão foi criada
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session) {
+        console.error('Sessão não foi criada após exchange')
+        return NextResponse.redirect(new URL('/login?error=no_session', request.url))
+      }
+
+      // Tentar verificar onboarding (com fallback seguro)
       try {
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('user_profiles')
           .select('onboarding_completed')
           .eq('user_id', session.user.id)
-          .single()
+          .maybeSingle()
 
-        // Se não completou, redirecionar para onboarding
+        // Se tabela não existir ou der erro, ir para onboarding
+        if (profileError && profileError.code === 'PGRST116') {
+          console.warn('Tabela user_profiles não existe, indo para onboarding')
+          return NextResponse.redirect(new URL('/onboarding', request.url))
+        }
+
+        // Se não completou onboarding, redirecionar
         if (!profile || !profile.onboarding_completed) {
           return NextResponse.redirect(new URL('/onboarding', request.url))
         }
+
+        // Onboarding completo, ir para home
+        return NextResponse.redirect(new URL('/home', request.url))
+        
       } catch (error) {
-        // Se a tabela não existir ou houver erro, redirecionar para onboarding
+        console.error('Erro ao verificar perfil:', error)
+        // Em caso de erro, ir para onboarding (seguro)
         return NextResponse.redirect(new URL('/onboarding', request.url))
       }
-
-      // Após completar onboarding, redirecionar para pricing
-      // Verificar se já tem assinatura ativa
-      try {
-        const { data: subscription } = await supabase
-          .from('user_subscriptions')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .eq('status', 'active')
-          .single()
-
-        // Se já tem assinatura, ir direto para home
-        if (subscription) {
-          return NextResponse.redirect(new URL('/home', request.url))
-        }
-      } catch (error) {
-        // Se não tem assinatura, continuar para pricing
-      }
-
-      // Redirecionar para pricing para escolher plano
-      return NextResponse.redirect(new URL('/pricing', request.url))
+      
+    } catch (error) {
+      console.error('Erro no callback de autenticação:', error)
+      return NextResponse.redirect(new URL('/login?error=callback_error', request.url))
     }
   }
 
-  // Redireciona para o home
-  return NextResponse.redirect(new URL('/home', request.url))
+  // Se não tem código, redirecionar para login
+  return NextResponse.redirect(new URL('/login', request.url))
 }
