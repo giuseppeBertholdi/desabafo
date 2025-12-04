@@ -26,15 +26,22 @@ export async function checkUserPlan(userId: string): Promise<PlanType> {
   const supabase = createRouteHandlerClient({ cookies })
   
   try {
-    const { data: subscription } = await supabase
+    const { data: subscription, error } = await supabase
       .from('user_subscriptions')
       .select('status')
       .eq('user_id', userId)
       .in('status', ['active', 'trialing'])
-      .single()
+      .maybeSingle() // Usar maybeSingle() em vez de single() para não dar erro se não encontrar
+
+    // Se houver erro (ex: tabela não existe), retornar free
+    if (error) {
+      console.warn('Erro ao verificar plano (tabela pode não existir):', error.message)
+      return 'free'
+    }
 
     return subscription ? 'pro' : 'free'
   } catch (error) {
+    console.warn('Erro ao verificar plano:', error)
     return 'free'
   }
 }

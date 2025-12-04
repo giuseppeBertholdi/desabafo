@@ -34,14 +34,19 @@ export function useUserPlan() {
         .select('*')
         .eq('user_id', session.user.id)
         .in('status', ['active', 'trialing'])
-        .single()
+        .maybeSingle() // Usar maybeSingle() para não dar erro se não encontrar
 
-      if (subscription && !error) {
+      // Se houver erro (ex: tabela não existe), assumir plano free
+      if (error) {
+        console.warn('Erro ao verificar plano:', error.message)
+        setPlan('free')
+      } else if (subscription) {
         setPlan('pro')
       } else {
         setPlan('free')
       }
     } catch (error) {
+      console.warn('Erro ao carregar plano:', error)
       setPlan('free')
     } finally {
       setIsLoading(false)

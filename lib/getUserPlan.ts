@@ -14,12 +14,18 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
   const supabase = createRouteHandlerClient({ cookies })
   
   try {
-    const { data: subscription } = await supabase
+    const { data: subscription, error } = await supabase
       .from('user_subscriptions')
       .select('*')
       .eq('user_id', userId)
       .eq('status', 'active')
-      .single()
+      .maybeSingle() // Usar maybeSingle() para não dar erro se não encontrar
+
+    // Se houver erro (ex: tabela não existe), retornar free
+    if (error) {
+      console.warn('Erro ao verificar plano:', error.message)
+      return { plan: 'free' }
+    }
 
     if (subscription) {
       return {
@@ -30,6 +36,7 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
       }
     }
   } catch (error) {
+    console.warn('Erro ao carregar plano:', error)
     // Se não encontrar assinatura, retorna free
   }
 
