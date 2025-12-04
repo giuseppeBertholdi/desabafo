@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     // Reduzir para 15 mensagens e truncar cada uma para economizar tokens
     const sampleMessages = messages
       .slice(0, 15)
-      .map(m => m.substring(0, 100)) // Limitar cada mensagem a 100 caracteres
+      .map((m: string) => m.substring(0, 100)) // Limitar cada mensagem a 100 caracteres
       .join('\n')
 
     // Gerar análise com Gemini
@@ -59,7 +59,7 @@ Retorne APENAS JSON:
     const distribution = JSON.parse(jsonMatch[0])
 
     // Normalizar para porcentagens
-    const total = Object.values(distribution).reduce((a: number, b: number) => a + b, 0)
+    const total = Object.values(distribution).reduce((a: number, b: unknown) => a + (typeof b === 'number' ? b : 0), 0)
     if (total === 0) {
       return NextResponse.json({
         distribution: {

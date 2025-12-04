@@ -3,6 +3,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { stripe } from '@/lib/stripe'
 import { createSupabaseAdmin } from '@/lib/supabaseAdmin'
+import Stripe from 'stripe'
 
 // Endpoint para sincronizar manualmente a assinatura (útil para debug)
 export async function POST(request: Request) {
@@ -53,7 +54,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Nenhuma assinatura ativa encontrada', plan: 'free' })
     }
 
-    const subscription = subscriptions.data[0]
+    // Retrieve full subscription details to ensure all fields are present
+    const subscription = await stripe.subscriptions.retrieve(subscriptions.data[0].id)
 
     // Salvar/atualizar no banco usando admin para bypassar RLS
     const { error } = await supabaseAdmin.from('user_subscriptions').upsert({
