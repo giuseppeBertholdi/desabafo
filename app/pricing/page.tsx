@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import PricingClient from "./PricingClient";
 import { getUserPlan } from '@/lib/getUserPlan'
 
+export const dynamic = 'force-dynamic'
+
 export default async function PricingPage() {
   const supabase = createServerComponentClient({ cookies })
 

@@ -12,7 +12,7 @@ const nextConfig = {
   },
   // Otimização de bundle
   experimental: {
-    optimizeCss: true,
+    // optimizeCss disabled due to critters dependency issue
   },
   // Desabilitar erros de ESLint durante build (apenas warnings)
   eslint: {

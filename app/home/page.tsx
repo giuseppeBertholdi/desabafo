@@ -3,6 +3,8 @@ import { cookies } from 'next/headers'
 import { redirect } from "next/navigation";
 import HomeClient from "./HomeClient";
 
+export const dynamic = 'force-dynamic'
+
 export default async function Home() {
   const supabase = createServerComponentClient({ cookies })
 

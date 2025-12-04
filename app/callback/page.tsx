@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 
-export default function SpotifyCallback() {
+function SpotifyCallbackContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -39,6 +39,18 @@ export default function SpotifyCallback() {
         </p>
       </motion.div>
     </div>
+  )
+}
+
+export default function SpotifyCallback() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-pink-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <SpotifyCallbackContent />
+    </Suspense>
   )
 }
 

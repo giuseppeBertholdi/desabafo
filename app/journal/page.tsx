@@ -3,6 +3,8 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import JournalClient from './JournalClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function Journal() {
   const supabase = createServerComponentClient({ cookies })
   const { data: { session } } = await supabase.auth.getSession()

@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
-export default function PricingSuccess() {
+function PricingSuccessContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(true)
@@ -104,6 +104,18 @@ export default function PricingSuccess() {
         )}
       </motion.div>
     </div>
+  )
+}
+
+export default function PricingSuccess() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center px-4">
+        <div className="w-16 h-16 border-4 border-pink-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <PricingSuccessContent />
+    </Suspense>
   )
 }
 

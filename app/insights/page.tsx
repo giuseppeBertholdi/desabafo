@@ -3,6 +3,8 @@ import { cookies } from 'next/headers'
 import { redirect } from "next/navigation";
 import InsightsClient from "./InsightsClient";
 
+export const dynamic = 'force-dynamic'
+
 export default async function InsightsPage() {
   const supabase = createServerComponentClient({ cookies })
 

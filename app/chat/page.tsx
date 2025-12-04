@@ -3,6 +3,8 @@ import { cookies } from 'next/headers'
 import { redirect } from "next/navigation";
 import ChatClient from "./ChatClient";
 
+export const dynamic = 'force-dynamic'
+
 export default async function ChatPage({ searchParams }: { searchParams: { tema?: string; mode?: string } }) {
   const supabase = createServerComponentClient({ cookies })
 
