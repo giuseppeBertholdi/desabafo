@@ -29,12 +29,6 @@ CREATE INDEX IF NOT EXISTS idx_user_subscriptions_status ON user_subscriptions(s
 -- Habilitar RLS (Row Level Security)
 ALTER TABLE user_subscriptions ENABLE ROW LEVEL SECURITY;
 
--- Remover políticas antigas se existirem
-DROP POLICY IF EXISTS "Users can view their own subscriptions" ON user_subscriptions;
-DROP POLICY IF EXISTS "Service role can insert subscriptions" ON user_subscriptions;
-DROP POLICY IF EXISTS "Service role can update subscriptions" ON user_subscriptions;
-DROP POLICY IF EXISTS "Service role can delete subscriptions" ON user_subscriptions;
-
 -- Política: Usuários podem ver apenas suas próprias assinaturas
 CREATE POLICY "Users can view their own subscriptions"
   ON user_subscriptions FOR SELECT

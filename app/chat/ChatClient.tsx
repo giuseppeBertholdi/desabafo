@@ -923,13 +923,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
       })
 
       if (!response.ok) {
-        // Tentar obter mensagem de erro da API
-        try {
-          const errorData = await response.json()
-          throw new Error(errorData.error || 'Erro ao enviar mensagem')
-        } catch {
-          throw new Error('Erro ao enviar mensagem')
-        }
+        throw new Error('Erro ao enviar mensagem')
       }
 
       const data = await response.json()
