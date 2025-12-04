@@ -50,11 +50,11 @@ class InMemoryStore {
     // Limpar entradas expiradas a cada 5 minutos
     this.cleanupInterval = setInterval(() => {
       const now = Date.now()
-      for (const [key, value] of this.store.entries()) {
+      Array.from(this.store.entries()).forEach(([key, value]) => {
         if (value.reset < now) {
           this.store.delete(key)
         }
-      }
+      })
     }, 5 * 60 * 1000)
   }
 
@@ -169,7 +169,8 @@ export async function checkRateLimit(
   type: RateLimitType,
   plan: 'free' | 'pro' | 'unauthenticated' = 'unauthenticated'
 ): Promise<RateLimitResult> {
-  const limits = RATE_LIMITS[plan][type] || RATE_LIMITS.unauthenticated.general
+  const planLimits = RATE_LIMITS[plan] as any
+  const limits = planLimits[type] || RATE_LIMITS.unauthenticated.general
   const key = `ratelimit:${plan}:${type}:${identifier}`
   const store = getStore()
 
@@ -208,7 +209,8 @@ export async function getRateLimitInfo(
   type: RateLimitType,
   plan: 'free' | 'pro' | 'unauthenticated' = 'unauthenticated'
 ): Promise<Omit<RateLimitResult, 'retryAfter'>> {
-  const limits = RATE_LIMITS[plan][type] || RATE_LIMITS.unauthenticated.general
+  const planLimits = RATE_LIMITS[plan] as any
+  const limits = planLimits[type] || RATE_LIMITS.unauthenticated.general
   const key = `ratelimit:${plan}:${type}:${identifier}`
   const store = getStore()
 

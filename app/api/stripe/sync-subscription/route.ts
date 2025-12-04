@@ -54,8 +54,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Nenhuma assinatura ativa encontrada', plan: 'free' })
     }
 
+    // Get subscription from list - it should have all required fields
+    const subscriptionData = subscriptions.data[0]
+    
     // Retrieve full subscription details to ensure all fields are present
-    const subscription = await stripe.subscriptions.retrieve(subscriptions.data[0].id)
+    const subscription = await stripe.subscriptions.retrieve(subscriptionData.id)
+
+    // Type guard to ensure we have the subscription with required fields
+    if (!subscription || typeof subscription !== 'object') {
+      return NextResponse.json({ error: 'Erro ao recuperar assinatura' }, { status: 500 })
+    }
+
+    // Access properties using type-safe approach
+    const currentPeriodStart = (subscription as any).current_period_start as number
+    const currentPeriodEnd = (subscription as any).current_period_end as number
+
+    if (!currentPeriodStart || !currentPeriodEnd) {
+      return NextResponse.json({ error: 'Dados da assinatura incompletos' }, { status: 500 })
+    }
 
     // Salvar/atualizar no banco usando admin para bypassar RLS
     const { error } = await supabaseAdmin.from('user_subscriptions').upsert({
@@ -63,9 +79,9 @@ export async function POST(request: Request) {
       stripe_subscription_id: subscription.id,
       stripe_customer_id: customer.id,
       status: subscription.status,
-      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-      cancel_at_period_end: subscription.cancel_at_period_end,
+      current_period_start: new Date(currentPeriodStart * 1000).toISOString(),
+      current_period_end: new Date(currentPeriodEnd * 1000).toISOString(),
+      cancel_at_period_end: (subscription as any).cancel_at_period_end,
       updated_at: new Date().toISOString()
     }, {
       onConflict: 'user_id'

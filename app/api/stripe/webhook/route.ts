@@ -34,15 +34,19 @@ export async function POST(request: Request) {
           // Buscar detalhes da assinatura
           const subscription = await stripe.subscriptions.retrieve(session.subscription as string)
 
+          // Access properties using type-safe approach
+          const currentPeriodStart = (subscription as any).current_period_start as number
+          const currentPeriodEnd = (subscription as any).current_period_end as number
+
           // Salvar/atualizar assinatura no banco
           const { error } = await supabase.from('user_subscriptions').upsert({
             user_id: userId,
             stripe_subscription_id: subscription.id,
             stripe_customer_id: subscription.customer as string,
             status: subscription.status,
-            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-            cancel_at_period_end: subscription.cancel_at_period_end,
+            current_period_start: new Date(currentPeriodStart * 1000).toISOString(),
+            current_period_end: new Date(currentPeriodEnd * 1000).toISOString(),
+            cancel_at_period_end: (subscription as any).cancel_at_period_end,
             updated_at: new Date().toISOString()
           }, {
             onConflict: 'user_id'
@@ -81,15 +85,19 @@ export async function POST(request: Request) {
 
       if (userId) {
         try {
+          // Access properties using type-safe approach
+          const currentPeriodStart = (subscription as any).current_period_start as number
+          const currentPeriodEnd = (subscription as any).current_period_end as number
+
           // Usar upsert para garantir que cria se não existir
           const { error } = await supabase.from('user_subscriptions').upsert({
             user_id: userId,
             stripe_subscription_id: subscription.id,
             stripe_customer_id: subscription.customer as string,
             status: subscription.status,
-            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-            cancel_at_period_end: subscription.cancel_at_period_end,
+            current_period_start: new Date(currentPeriodStart * 1000).toISOString(),
+            current_period_end: new Date(currentPeriodEnd * 1000).toISOString(),
+            cancel_at_period_end: (subscription as any).cancel_at_period_end,
             updated_at: new Date().toISOString()
           }, {
             onConflict: 'stripe_subscription_id'
@@ -137,14 +145,18 @@ export async function POST(request: Request) {
 
       if (userId) {
         try {
+          // Access properties using type-safe approach
+          const currentPeriodStart = (subscription as any).current_period_start as number
+          const currentPeriodEnd = (subscription as any).current_period_end as number
+
           const { error } = await supabase.from('user_subscriptions').upsert({
             user_id: userId,
             stripe_subscription_id: subscription.id,
             stripe_customer_id: subscription.customer as string,
             status: subscription.status,
-            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-            cancel_at_period_end: subscription.cancel_at_period_end,
+            current_period_start: new Date(currentPeriodStart * 1000).toISOString(),
+            current_period_end: new Date(currentPeriodEnd * 1000).toISOString(),
+            cancel_at_period_end: (subscription as any).cancel_at_period_end,
             updated_at: new Date().toISOString()
           }, {
             onConflict: 'stripe_subscription_id'
