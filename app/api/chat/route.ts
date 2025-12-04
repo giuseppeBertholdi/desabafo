@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { withRateLimit } from '@/lib/rateLimitMiddleware'
+import { checkMonthlyLimit, limitExceededResponse, sanitizeInput } from '@/lib/planAuthorization'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'AIzaSyDSwHdCbfaMSJVk-i0ZLj6aR-WJccS9gd4')
 
@@ -97,53 +98,31 @@ async function handleChatRequest(request: NextRequest) {
     if (!session) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
+
+    // SEGURANÇA: Validar e sanitizar entrada
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return NextResponse.json({ error: 'Mensagens inválidas' }, { status: 400 })
+    }
+
+    // Limitar tamanho das mensagens (anti-abuse)
+    if (messages.length > 50) {
+      return NextResponse.json({ error: 'Muitas mensagens no contexto' }, { status: 400 })
+    }
+
+    // Sanitizar todas as mensagens
+    const sanitizedMessages = messages.map(msg => ({
+      ...msg,
+      content: sanitizeInput(msg.content, 5000) // Max 5000 chars por mensagem
+    }))
     
-    // Verificar plano do usuário e limite de respostas (apenas para free)
-    const { data: subscription } = await supabase
-      .from('user_subscriptions')
-      .select('status')
-      .eq('user_id', session.user.id)
-      .in('status', ['active', 'trialing'])
-      .single()
-    
-    const isFreePlan = !subscription
-    
-    // Se for plano free, verificar limite de 100 respostas por mês
-    if (isFreePlan) {
-      const now = new Date()
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-      
-      // Buscar IDs das sessões do usuário
-      const { data: userSessions } = await supabase
-        .from('chat_sessions')
-        .select('id')
-        .eq('user_id', session.user.id)
-      
-      const sessionIds = userSessions?.map(s => s.id) || []
-      
-      if (sessionIds.length > 0) {
-        // Contar respostas da IA no mês atual
-        const { count } = await supabase
-          .from('chat_messages')
-          .select('*', { count: 'exact', head: true })
-          .eq('role', 'assistant')
-          .gte('created_at', firstDayOfMonth.toISOString())
-          .in('session_id', sessionIds)
-        
-        const responseCount = count || 0
-        
-        if (responseCount >= 100) {
-          // Retornar erro genérico sem mencionar o limite
-          return NextResponse.json(
-            { error: 'Erro ao processar mensagem. Tente novamente mais tarde.' },
-            { status: 429 }
-          )
-        }
-      }
+    // SEGURANÇA: Verificar limite mensal (plano FREE tem limite de 100 mensagens/mês)
+    const limitCheck = await checkMonthlyLimit(session.user.id, 'chat_messages')
+    if (!limitCheck.isAuthorized) {
+      return limitExceededResponse(limitCheck)
     }
     
     // Verificar se a última mensagem do usuário contém sinais de emergência
-    const lastUserMessage = messages[messages.length - 1]?.content || ''
+    const lastUserMessage = sanitizedMessages[sanitizedMessages.length - 1]?.content || ''
     
     // Verificação rápida por palavras-chave (gratuita)
     let isEmergency = detectEmergencyKeywords(lastUserMessage)

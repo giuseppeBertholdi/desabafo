@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { sanitizeInput } from '@/lib/planAuthorization'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'AIzaSyDSwHdCbfaMSJVk-i0ZLj6aR-WJccS9gd4')
 
@@ -15,7 +16,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
-    if (!messages || messages.length === 0) {
+    // SEGURANÇA: Validar entrada
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json({
         distribution: {
           feliz: 0, calmo: 0, esperançoso: 0, grato: 0,
@@ -24,10 +26,11 @@ export async function POST(request: Request) {
       })
     }
 
-    // Reduzir para 15 mensagens e truncar cada uma para economizar tokens
+    // Reduzir para 15 mensagens, sanitizar e truncar cada uma
     const sampleMessages = messages
       .slice(0, 15)
-      .map((m: string) => m.substring(0, 100)) // Limitar cada mensagem a 100 caracteres
+      .map((m: string) => sanitizeInput(m, 100)) // Sanitizar e limitar a 100 caracteres
+      .filter(m => m.length > 0) // Remover mensagens vazias após sanitização
       .join('\n')
 
     // Gerar análise com Gemini

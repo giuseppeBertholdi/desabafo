@@ -9,22 +9,24 @@
 
 ## 2. Configurar Redirect URI
 
-No dashboard do Spotify, vá em **Settings** e adicione a seguinte URL de redirecionamento:
+No dashboard do Spotify, vá em **Settings** e adicione as seguintes URLs de redirecionamento:
 
+**Para Desenvolvimento:**
 ```
 http://127.0.0.1:3000/callback
 ```
-
 **Importante:** O Spotify não aceita `localhost`, então use `127.0.0.1` para desenvolvimento local.
 
-Para produção, adicione também:
+**Para Produção:**
 ```
-https://seu-dominio.com/callback
+https://desabafo.site/callback
 ```
+
+⚠️ **IMPORTANTE**: Adicione AMBAS as URLs no Spotify Developer Dashboard para que funcione tanto em desenvolvimento quanto em produção.
 
 ## 3. Configurar Variáveis de Ambiente
 
-Adicione as seguintes variáveis no arquivo `.env.local`:
+### Desenvolvimento Local (`.env.local`):
 
 ```env
 SPOTIFY_CLIENT_ID=seu-client-id-aqui
@@ -32,7 +34,15 @@ SPOTIFY_CLIENT_SECRET=seu-client-secret-aqui
 SPOTIFY_REDIRECT_URI=http://127.0.0.1:3000/callback
 ```
 
-**Nota:** Se não configurar essas variáveis, o sistema usará os valores padrão fornecidos.
+### Produção (Netlify Environment Variables):
+
+```env
+SPOTIFY_CLIENT_ID=seu-client-id-aqui
+SPOTIFY_CLIENT_SECRET=seu-client-secret-aqui
+SPOTIFY_REDIRECT_URI=https://desabafo.site/callback
+```
+
+Configure em: **Site Settings → Environment Variables** no Netlify.
 
 ## 4. Executar Migração do Banco de Dados
 

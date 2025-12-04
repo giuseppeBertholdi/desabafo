@@ -2,16 +2,13 @@ import { NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { sanitizeInput } from '@/lib/planAuthorization'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
 
 export async function POST(request: Request) {
   try {
     const { text } = await request.json()
-
-    if (!text || text.length < 10 || text.length > 200) {
-      return NextResponse.json({ suggestion: null })
-    }
 
     // Verificar autenticação
     const supabase = createRouteHandlerClient({ cookies })
@@ -21,11 +18,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
+    // SEGURANÇA: Sanitizar entrada
+    const sanitizedText = sanitizeInput(text, 200)
+
+    if (!sanitizedText || sanitizedText.length < 10 || sanitizedText.length > 200) {
+      return NextResponse.json({ suggestion: null })
+    }
+
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' })
     
     const prompt = `Você está ajudando alguém a escrever em um diário. A pessoa começou a escrever:
 
-"${text}"
+"${sanitizedText}"
 
 Sugira uma continuação natural e útil (máximo 10 palavras). Seja empático e genuíno. Responda APENAS com a sugestão, sem explicações.`
 

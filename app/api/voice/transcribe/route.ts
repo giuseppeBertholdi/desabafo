@@ -3,6 +3,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { SpeechClient } from '@google-cloud/speech'
 import { getGoogleCloudCredentials } from '@/lib/googleCloudCredentials'
+import { requireProPlan, unauthorizedResponse } from '@/lib/planAuthorization'
 
 // Verificar se as credenciais estão configuradas
 const getSpeechClient = () => {
@@ -30,6 +31,12 @@ export async function POST(request: Request) {
 
     if (!session) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+    }
+
+    // SEGURANÇA: Verificar se usuário tem plano PRO (voz é feature premium)
+    const planCheck = await requireProPlan(session.user.id, 'Chat por voz')
+    if (!planCheck.isAuthorized) {
+      return unauthorizedResponse(planCheck.message || 'Plano PRO necessário', planCheck.plan)
     }
 
     // Verificar se as credenciais do Google Cloud estão configuradas
