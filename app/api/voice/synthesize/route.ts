@@ -2,33 +2,20 @@ import { NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { TextToSpeechClient } from '@google-cloud/text-to-speech'
+import { getGoogleCloudCredentials } from '@/lib/googleCloudCredentials'
 
 // Verificar se as credenciais estão configuradas
 const getTTSClient = () => {
-  if (!process.env.GOOGLE_CLOUD_CREDENTIALS || !process.env.GOOGLE_CLOUD_PROJECT_ID) {
+  const credentials = getGoogleCloudCredentials()
+  
+  if (!credentials) {
     return null
   }
 
   try {
-    // Tentar fazer parse do JSON
-    let credentials
-    try {
-      credentials = JSON.parse(process.env.GOOGLE_CLOUD_CREDENTIALS)
-    } catch (parseError) {
-      console.error('Erro ao fazer parse das credenciais JSON:', parseError)
-      console.error('Verifique se GOOGLE_CLOUD_CREDENTIALS está em formato JSON válido')
-      return null
-    }
-
-    // Validar se tem os campos necessários
-    if (!credentials.type || !credentials.project_id || !credentials.private_key || !credentials.client_email) {
-      console.error('Credenciais incompletas. Verifique se todos os campos necessários estão presentes.')
-      return null
-    }
-
     return new TextToSpeechClient({
       credentials: credentials,
-      projectId: process.env.GOOGLE_CLOUD_PROJECT_ID
+      projectId: credentials.project_id
     })
   } catch (error) {
     console.error('Erro ao inicializar TextToSpeechClient:', error)
