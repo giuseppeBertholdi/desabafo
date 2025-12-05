@@ -377,7 +377,18 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
     if (temaInfo) {
       return `${temaInfo.mensagemInicial}`
     }
-    return `oi, ${firstName}! como você tá hoje? o que tá rolando na sua cabeça?`
+    // Mensagem inicial mais casual e amigável
+    const greetings = [
+      `eae, ${firstName}! como você tá?`,
+      `oi, ${firstName}! tudo bem?`,
+      `hey, ${firstName}! o que tá rolando?`,
+      `e aí, ${firstName}! como você tá hoje?`,
+      `opa, ${firstName}! tudo certo?`,
+    ]
+    // Usar o nome para gerar um índice determinístico
+    const hash = firstName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+    const index = hash % greetings.length
+    return greetings[index]
   }
 
   // No modo voz, não mostrar mensagem inicial
@@ -581,6 +592,19 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
   useEffect(() => {
     localStorage.setItem('temporaryChat', temporaryChat.toString())
   }, [temporaryChat])
+
+  // Inicializar mensagem inicial quando o chat carregar (apenas modo texto)
+  useEffect(() => {
+    if (!voiceMode && messages.length === 0 && !temporaryChat) {
+      const initialMessage: Message = {
+        id: 'initial',
+        role: 'assistant',
+        content: getInitialMessage(),
+        timestamp: new Date()
+      }
+      setMessages([initialMessage])
+    }
+  }, [voiceMode, firstName, tema]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Função para terminar conversa temporária
   const handleEndTemporaryChat = () => {
