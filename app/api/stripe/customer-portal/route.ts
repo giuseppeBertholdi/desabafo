@@ -32,9 +32,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Criar sessão do Customer Portal
+    const returnUrl = request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL
+    if (!returnUrl) {
+      return NextResponse.json(
+        { error: 'URL de retorno não configurada' },
+        { status: 500 }
+      )
+    }
+
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: subscription.stripe_customer_id,
-      return_url: `${request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/account`,
+      return_url: `${returnUrl}/account`,
     })
 
     return NextResponse.json({ url: portalSession.url })

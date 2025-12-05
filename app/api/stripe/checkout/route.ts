@@ -13,8 +13,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
+    // Validar URL base
+    if (!process.env.NEXT_PUBLIC_APP_URL) {
+      return NextResponse.json(
+        { error: 'NEXT_PUBLIC_APP_URL não está configurada' },
+        { status: 500 }
+      )
+    }
+
     // Usar priceId fornecido ou o padrão baseado no planType
     const finalPriceId = priceId || (planType === 'yearly' ? STRIPE_PRICE_IDS.yearly : STRIPE_PRICE_IDS.monthly)
+    
+    if (!finalPriceId) {
+      return NextResponse.json(
+        { error: 'Price ID não encontrado. Verifique as variáveis de ambiente STRIPE_PRICE_ID_MONTHLY e STRIPE_PRICE_ID_YEARLY' },
+        { status: 500 }
+      )
+    }
 
     // Criar sessão de checkout no Stripe
     const checkoutSession = await stripe.checkout.sessions.create({

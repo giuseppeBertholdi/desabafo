@@ -4,12 +4,27 @@ import { stripe } from '@/lib/stripe'
 import { createSupabaseAdmin } from '@/lib/supabaseAdmin'
 import Stripe from 'stripe'
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
-
 export async function POST(request: Request) {
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+  
+  if (!webhookSecret) {
+    console.error('STRIPE_WEBHOOK_SECRET não está configurada')
+    return NextResponse.json(
+      { error: 'Webhook secret não configurado' },
+      { status: 500 }
+    )
+  }
+
   const body = await request.text()
   const headersList = await headers()
-  const signature = headersList.get('stripe-signature')!
+  const signature = headersList.get('stripe-signature')
+
+  if (!signature) {
+    return NextResponse.json(
+      { error: 'Assinatura do webhook não encontrada' },
+      { status: 400 }
+    )
+  }
 
   let event: Stripe.Event
 
