@@ -1,7 +1,11 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { NextResponse } from 'next/server'
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'AIzaSyDSwHdCbfaMSJVk-i0ZLj6aR-WJccS9gd4')
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY
+if (!GEMINI_API_KEY) {
+  console.error('⚠️ GEMINI_API_KEY não está configurada!')
+}
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || '')
 
 // Lista de temas disponíveis (deve corresponder aos temas no ChatClient)
 const temasDisponiveis = [

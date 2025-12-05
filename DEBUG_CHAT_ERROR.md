@@ -32,13 +32,25 @@ Quando o usuário envia uma mensagem no chat, aparece o erro:
 
 ## 🔧 O Que Verificar em Produção
 
+### ⚠️ **PROBLEMA IDENTIFICADO: Chave da API Inválida**
+
+O erro específico encontrado foi:
+```
+API key not valid. Please pass a valid API key.
+reason: 'API_KEY_INVALID'
+```
+
+**Solução**: Veja o guia completo em `CORRIGIR_GEMINI_API_KEY.md`
+
 ### 1. **Variáveis de Ambiente**
 
-Certifique-se de que a variável `GEMINI_API_KEY` está configurada no Netlify:
+Certifique-se de que a variável `GEMINI_API_KEY` está configurada **CORRETAMENTE** no Netlify:
 
 1. Acesse **Site Settings → Environment Variables** no Netlify
 2. Verifique se `GEMINI_API_KEY` está configurada
-3. Se não estiver, adicione a chave da API do Google Gemini
+3. **IMPORTANTE**: A chave deve ser válida e começar com `AIza...`
+4. Se a chave estiver inválida ou expirada, gere uma nova no [Google AI Studio](https://makersuite.google.com/app/apikey)
+5. Atualize a variável no Netlify e faça redeploy
 
 ### 2. **Logs do Netlify**
 
@@ -60,9 +72,14 @@ Após fazer deploy, verifique os logs:
 - **Sintoma**: Erro 429 ou mensagem sobre muitas requisições
 - **Solução**: Verificar quota da API no Google Cloud Console
 
-#### C. **Chave da API inválida ou expirada**
-- **Sintoma**: Erro 401/403 ou mensagem sobre autenticação
-- **Solução**: Verificar se a chave está correta e ativa
+#### C. **Chave da API inválida ou expirada** ⚠️ **ESTE É O PROBLEMA ATUAL**
+- **Sintoma**: Erro 400 com `API key not valid` ou `API_KEY_INVALID`
+- **Solução**: 
+  1. Gere uma nova chave no [Google AI Studio](https://makersuite.google.com/app/apikey)
+  2. Atualize `GEMINI_API_KEY` no Netlify
+  3. Certifique-se de que a API do Gemini está habilitada no Google Cloud
+  4. Faça redeploy
+  5. Veja o guia completo em `CORRIGIR_GEMINI_API_KEY.md`
 
 #### D. **Erro de rede ou timeout**
 - **Sintoma**: Erro genérico ou timeout

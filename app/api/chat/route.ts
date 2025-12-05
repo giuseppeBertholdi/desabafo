@@ -543,12 +543,22 @@ Retorne APENAS as novas memórias importantes (máximo 3), uma por linha, de for
   } catch (error: any) {
     console.error('Erro na API do Gemini:', error)
     
-    // Verificar se é erro de autenticação da API
-    if (error?.message?.includes('API_KEY') || error?.status === 401 || error?.status === 403) {
-      console.error('Erro de autenticação da API Gemini - verifique GEMINI_API_KEY')
+    // Verificar se é erro de autenticação da API (chave inválida)
+    if (error?.message?.includes('API_KEY') || 
+        error?.message?.includes('API key not valid') ||
+        error?.errorDetails?.some((detail: any) => detail.reason === 'API_KEY_INVALID') ||
+        error?.status === 401 || 
+        error?.status === 403 ||
+        (error?.status === 400 && error?.message?.includes('API key'))) {
+      console.error('❌ Erro de autenticação da API Gemini - chave inválida ou não configurada')
+      console.error('Detalhes:', {
+        status: error?.status,
+        message: error?.message,
+        errorDetails: error?.errorDetails
+      })
       return NextResponse.json(
-        { error: 'Erro de configuração da API. Por favor, entre em contato com o suporte.' },
-        { status: 500 }
+        { error: 'Erro de configuração da API. A chave da API do Gemini está inválida ou não configurada. Verifique a variável GEMINI_API_KEY no Netlify.' },
+        { status: 503 }
       )
     }
     
