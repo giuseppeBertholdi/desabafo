@@ -11,7 +11,7 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 
 // Preços dos planos
 export const STRIPE_PRICE_IDS = {
-  monthly: process.env.STRIPE_PRICE_ID_MONTHLY || 'price_1SVbVVQpCkU9JLjuAuaIpLF6',
-  yearly: process.env.STRIPE_PRICE_ID_YEARLY || 'price_1SVbXZQpCkU9JLjuHbUrDAUz',
+  monthly: process.env.STRIPE_PRICE_ID_MONTHLY,
+  yearly: process.env.STRIPE_PRICE_ID_YEARLY,
 }
 
