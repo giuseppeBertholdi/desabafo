@@ -708,7 +708,14 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
       })
 
       if (!response.ok) {
-        throw new Error('Erro ao enviar mensagem')
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData.error || `Erro ${response.status}: ${response.statusText}`
+        console.error('Erro na resposta da API:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        })
+        throw new Error(errorMessage)
       }
 
       const data = await response.json()
@@ -1003,12 +1010,38 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
         }
       }
     } catch (error: any) {
-      console.error('Erro:', error)
+      console.error('Erro ao enviar mensagem:', error)
+      
+      // Log detalhado do erro para debug
+      console.error('Detalhes do erro:', {
+        message: error?.message,
+        name: error?.name,
+        stack: error?.stack,
+        response: error?.response
+      })
+      
+      // Mostrar mensagem de erro mais específica
+      let errorMessageText = 'Desculpe, tive um problema ao processar sua mensagem. Pode tentar novamente?'
+      
+      if (error?.message) {
+        // Mensagens de erro mais específicas
+        if (error.message.includes('429') || error.message.includes('rate limit') || error.message.includes('Muitas requisições')) {
+          errorMessageText = 'Você está enviando mensagens muito rápido. Aguarde um momento e tente novamente.'
+        } else if (error.message.includes('401') || error.message.includes('403') || error.message.includes('autenticação')) {
+          errorMessageText = 'Erro de autenticação. Por favor, faça login novamente.'
+        } else if (error.message.includes('configuração') || error.message.includes('API')) {
+          errorMessageText = 'Erro de configuração do sistema. Por favor, tente novamente mais tarde.'
+        } else {
+          errorMessageText = error.message
+        }
+      }
+      
       showError(error?.message || 'Erro ao enviar mensagem. Tente novamente.')
+      
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'Desculpe, tive um problema ao processar sua mensagem. Pode tentar novamente?',
+        content: errorMessageText,
         timestamp: new Date()
       }
       setMessages(prev => [...prev, errorMessage])

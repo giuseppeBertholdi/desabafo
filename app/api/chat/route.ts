@@ -5,7 +5,17 @@ import { cookies } from 'next/headers'
 import { withRateLimit } from '@/lib/rateLimitMiddleware'
 import { checkMonthlyLimit, limitExceededResponse, sanitizeInput } from '@/lib/planAuthorization'
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'AIzaSyDSwHdCbfaMSJVk-i0ZLj6aR-WJccS9gd4')
+// Verificar se a chave da API está configurada
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY
+if (!GEMINI_API_KEY) {
+  console.error('⚠️ GEMINI_API_KEY não está configurada! Configure a variável de ambiente.')
+}
+
+// Inicializar genAI apenas se a chave estiver configurada
+let genAI: GoogleGenerativeAI | null = null
+if (GEMINI_API_KEY) {
+  genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
+}
 
 // Função auxiliar para calcular similaridade simples
 function calculateSimilarity(str1: string, str2: string): number {
@@ -65,9 +75,9 @@ function detectEmergencyKeywords(message: string): boolean {
 }
 
 // Detectar emergência usando IA - apenas quando necessário (otimizado para reduzir custos)
-async function detectEmergencyWithAI(message: string, genAI: GoogleGenerativeAI): Promise<boolean> {
+async function detectEmergencyWithAI(message: string, genAIInstance: GoogleGenerativeAI): Promise<boolean> {
   try {
-    const model = genAI.getGenerativeModel({ 
+    const model = genAIInstance.getGenerativeModel({ 
       model: 'gemini-2.0-flash-exp',
       generationConfig: {
         maxOutputTokens: 10, // Resposta curta: apenas SIM ou NAO
@@ -90,6 +100,15 @@ async function detectEmergencyWithAI(message: string, genAI: GoogleGenerativeAI)
 
 async function handleChatRequest(request: NextRequest) {
   try {
+    // Verificar se a chave da API está configurada
+    if (!GEMINI_API_KEY) {
+      console.error('❌ GEMINI_API_KEY não está configurada!')
+      return NextResponse.json(
+        { error: 'Serviço temporariamente indisponível. Por favor, tente novamente mais tarde.' },
+        { status: 503 }
+      )
+    }
+    
     const { messages, sessionId, bestFriendMode, firstName, tema, temporaryChat } = await request.json()
     const supabase = createRouteHandlerClient({ cookies })
     
@@ -128,7 +147,7 @@ async function handleChatRequest(request: NextRequest) {
     let isEmergency = detectEmergencyKeywords(lastUserMessage)
     
     // Só usar IA se detectar algo suspeito nas palavras-chave (reduz custos)
-    if (isEmergency) {
+    if (isEmergency && genAI) {
       // Confirmar com IA apenas quando necessário
       const aiConfirmation = await detectEmergencyWithAI(lastUserMessage, genAI)
       isEmergency = aiConfirmation
@@ -331,6 +350,14 @@ Exemplos do seu tom (MODO MELHOR AMIGO):
 Você é como um melhor amigo: empático, verdadeiro, acolhedor e sincero quando necessário.${memoryContext}${temaContexto}${spotifyContext}`
     }
 
+    // Verificar se genAI está inicializado
+    if (!genAI) {
+      return NextResponse.json(
+        { error: 'Serviço temporariamente indisponível. Por favor, tente novamente mais tarde.' },
+        { status: 503 }
+      )
+    }
+    
     // Configurar o modelo
     const model = genAI.getGenerativeModel({ 
       model: 'gemini-2.0-flash-exp',
@@ -433,7 +460,7 @@ se você não conseguir ligar agora, posso te ajudar a encontrar outras formas d
         const allMessages = [...messages, { role: 'user', content: lastMessage }, { role: 'assistant', content: text }]
         const userMsgs = allMessages.filter((m: any) => m.role === 'user')
         
-        if (userMsgs.length >= 3) {
+        if (userMsgs.length >= 3 && genAI) {
           // Usar IA para extrair memórias
           const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' })
           // Limitar a últimas 10 mensagens para reduzir tokens no processamento de memórias
@@ -513,11 +540,49 @@ Retorne APENAS as novas memórias importantes (máximo 3), uma por linha, de for
     }
 
     return NextResponse.json({ message: text, isEmergency: false })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro na API do Gemini:', error)
+    
+    // Verificar se é erro de autenticação da API
+    if (error?.message?.includes('API_KEY') || error?.status === 401 || error?.status === 403) {
+      console.error('Erro de autenticação da API Gemini - verifique GEMINI_API_KEY')
+      return NextResponse.json(
+        { error: 'Erro de configuração da API. Por favor, entre em contato com o suporte.' },
+        { status: 500 }
+      )
+    }
+    
+    // Verificar se é erro de rate limit da API
+    if (error?.status === 429 || error?.message?.includes('quota') || error?.message?.includes('rate limit')) {
+      console.error('Rate limit da API Gemini excedido')
+      return NextResponse.json(
+        { error: 'Muitas requisições. Por favor, aguarde um momento e tente novamente.' },
+        { status: 429 }
+      )
+    }
+    
+    // Verificar se é erro de validação
+    if (error?.status === 400 || error?.message?.includes('invalid')) {
+      console.error('Erro de validação na API Gemini:', error.message)
+      return NextResponse.json(
+        { error: 'Mensagem inválida. Por favor, tente novamente com uma mensagem diferente.' },
+        { status: 400 }
+      )
+    }
+    
+    // Erro genérico com mais detalhes no log
+    const errorMessage = error?.message || 'Erro desconhecido'
+    const errorStatus = error?.status || 500
+    console.error('Erro detalhado:', {
+      message: errorMessage,
+      status: errorStatus,
+      stack: error?.stack,
+      name: error?.name
+    })
+    
     return NextResponse.json(
-      { error: 'Erro ao processar mensagem' },
-      { status: 500 }
+      { error: 'Erro ao processar mensagem. Por favor, tente novamente.' },
+      { status: errorStatus }
     )
   }
 }
