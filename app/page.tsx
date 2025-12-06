@@ -1,4 +1,4 @@
-import dynamic from 'next/dynamic'
+import dynamicImport from 'next/dynamic'
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -6,27 +6,27 @@ import Header from '@/components/Header'
 import Hero from '@/components/Hero'
 
 // Lazy load componentes pesados para melhorar performance inicial
-const Features = dynamic(() => import('@/components/Features'), {
+const Features = dynamicImport(() => import('@/components/Features'), {
   ssr: true,
 })
 
-const Testimonials = dynamic(() => import('@/components/Testimonials'), {
+const Testimonials = dynamicImport(() => import('@/components/Testimonials'), {
   ssr: true,
 })
 
-const Pricing = dynamic(() => import('@/components/Pricing'), {
+const Pricing = dynamicImport(() => import('@/components/Pricing'), {
   ssr: true,
 })
 
-const FAQ = dynamic(() => import('@/components/FAQ'), {
+const FAQ = dynamicImport(() => import('@/components/FAQ'), {
   ssr: true,
 })
 
-const CTA = dynamic(() => import('@/components/CTA'), {
+const CTA = dynamicImport(() => import('@/components/CTA'), {
   ssr: true,
 })
 
-const Footer = dynamic(() => import('@/components/Footer'), {
+const Footer = dynamicImport(() => import('@/components/Footer'), {
   ssr: true,
 })
 
