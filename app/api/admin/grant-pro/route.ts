@@ -74,6 +74,9 @@ export async function POST(request: Request) {
     }
 
     // Criar assinatura no Stripe
+    // Calcular trial_end (1 ano a partir de agora)
+    const trialEndTimestamp = Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60)
+    
     const subscription = await stripe.subscriptions.create({
       customer: customer.id,
       items: [{ price: priceId }],
@@ -82,20 +85,57 @@ export async function POST(request: Request) {
         granted_by_admin: 'true'
       },
       // Não cobrar imediatamente (plano gratuito/concedido)
-      trial_end: Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60), // 1 ano de trial
+      // Usar trial_end para dar acesso gratuito por 1 ano
+      trial_end: trialEndTimestamp,
     })
 
     // Salvar assinatura no banco de dados
-    const currentPeriodStart = (subscription as any).current_period_start as number
-    const currentPeriodEnd = (subscription as any).current_period_end as number
+    // Para assinaturas em trial, usar trial_start e trial_end se disponíveis
+    const currentPeriodStart = (subscription as any).current_period_start as number | undefined
+    const currentPeriodEnd = (subscription as any).current_period_end as number | undefined
+    const trialStart = (subscription as any).trial_start as number | undefined
+    const trialEnd = (subscription as any).trial_end as number | undefined
+
+    // Validar e converter datas
+    let periodStartISO: string
+    let periodEndISO: string
+
+    try {
+      // Se estiver em trial, usar trial_start, senão usar current_period_start
+      const startTimestamp = trialStart || currentPeriodStart
+      if (startTimestamp && typeof startTimestamp === 'number' && startTimestamp > 0) {
+        periodStartISO = new Date(startTimestamp * 1000).toISOString()
+      } else {
+        periodStartISO = new Date().toISOString()
+      }
+
+      // Se estiver em trial, usar trial_end, senão usar current_period_end
+      const endTimestamp = trialEnd || currentPeriodEnd
+      if (endTimestamp && typeof endTimestamp === 'number' && endTimestamp > 0) {
+        periodEndISO = new Date(endTimestamp * 1000).toISOString()
+      } else {
+        // Se não tiver end, adicionar 1 mês ao start
+        const startDate = new Date(periodStartISO)
+        startDate.setMonth(startDate.getMonth() + 1)
+        periodEndISO = startDate.toISOString()
+      }
+    } catch (dateError) {
+      console.error('Erro ao converter datas:', dateError)
+      // Usar datas padrão se houver erro
+      const now = new Date()
+      periodStartISO = now.toISOString()
+      const endDate = new Date(now)
+      endDate.setMonth(endDate.getMonth() + 1)
+      periodEndISO = endDate.toISOString()
+    }
 
     const { error: dbError } = await supabase.from('user_subscriptions').upsert({
       user_id: user.id,
       stripe_subscription_id: subscription.id,
       stripe_customer_id: customer.id,
       status: subscription.status,
-      current_period_start: new Date(currentPeriodStart * 1000).toISOString(),
-      current_period_end: new Date(currentPeriodEnd * 1000).toISOString(),
+      current_period_start: periodStartISO,
+      current_period_end: periodEndISO,
       cancel_at_period_end: (subscription as any).cancel_at_period_end || false,
       updated_at: new Date().toISOString()
     }, {
