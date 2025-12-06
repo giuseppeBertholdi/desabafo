@@ -1381,7 +1381,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                 </motion.div>
                 
                 {/* Botão grande e centralizado com animação pulsante suave - Estilo Calm */}
-                <div className="relative">
+                <div className="relative flex items-center justify-center">
                   {/* Círculos pulsantes de fundo (efeito Calm mais suave) */}
                   {(isRecording || realtimeSession.isActive) && (
                     <>
@@ -1395,8 +1395,8 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                           repeat: Infinity,
                           ease: "easeInOut"
                         }}
-                        className="absolute inset-0 rounded-full bg-gradient-to-br from-pink-200/50 to-purple-200/50 dark:from-pink-900/30 dark:to-purple-900/30"
-                        style={{ width: '140px', height: '140px', top: '-20px', left: '-20px' }}
+                        className="absolute rounded-full bg-gradient-to-br from-pink-200/50 to-purple-200/50 dark:from-pink-900/30 dark:to-purple-900/30"
+                        style={{ width: '160px', height: '160px', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
                       />
                       <motion.div
                         animate={{
@@ -1409,8 +1409,8 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                           ease: "easeInOut",
                           delay: 0.3
                         }}
-                        className="absolute inset-0 rounded-full bg-gradient-to-br from-pink-200/40 to-purple-200/40 dark:from-pink-900/20 dark:to-purple-900/20"
-                        style={{ width: '140px', height: '140px', top: '-20px', left: '-20px' }}
+                        className="absolute rounded-full bg-gradient-to-br from-pink-200/40 to-purple-200/40 dark:from-pink-900/20 dark:to-purple-900/20"
+                        style={{ width: '180px', height: '180px', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
                       />
                     </>
                   )}

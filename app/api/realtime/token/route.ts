@@ -16,18 +16,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar se o usuário tem plano PRO (voice mode requer pro)
-    const { data: subscription } = await supabase
-      .from('user_subscriptions')
-      .select('status')
-      .eq('user_id', session.user.id)
-      .in('status', ['active', 'trialing'])
-      .single()
+    // Exceção: liberar para giuseppe.bertholdi@gmail.com
+    const isAllowedUser = session.user.email === 'giuseppe.bertholdi@gmail.com'
+    
+    if (!isAllowedUser) {
+      const { data: subscription } = await supabase
+        .from('user_subscriptions')
+        .select('status')
+        .eq('user_id', session.user.id)
+        .in('status', ['active', 'trialing'])
+        .single()
 
-    if (!subscription) {
-      return NextResponse.json(
-        { error: 'Modo voz disponível apenas no plano Pro' },
-        { status: 403 }
-      )
+      if (!subscription) {
+        return NextResponse.json(
+          { error: 'Modo voz disponível apenas no plano Pro' },
+          { status: 403 }
+        )
+      }
     }
 
     if (!process.env.OPENAI_API_KEY) {
@@ -44,7 +49,7 @@ export async function POST(request: NextRequest) {
       session: {
         type: "realtime",
         model: "gpt-realtime-mini",
-        instructions: "Você é o 'desabafo', um amigo virtual brasileiro que está aqui para ouvir sem julgar. IMPORTANTE: Não apenas peça para a pessoa continuar falando. Ofereça insights, perspectivas e reflexões úteis. Quando a pessoa compartilhar algo, reflita e ofereça uma perspectiva que possa ajudar. Seja proativo em ajudar, não apenas passivo ouvindo. Seja breve, direto, empático e acolhedor. Você DEVE responder APENAS em PORTUGUÊS BRASILEIRO.",
+        instructions: "Você é o 'desabafo', um amigo virtual brasileiro acolhedor que está aqui para ter uma conversa verdadeira. IMPORTANTE: Não apenas concorde ou valide passivamente. Tenha uma conversa real: compartilhe perspectivas, insights e reflexões. Quando discordar, expresse com gentileza. Faça perguntas que exploram de verdade. Balance acolhimento com honestidade. Seja breve, direto, empático e genuinamente útil. Você DEVE responder APENAS em PORTUGUÊS BRASILEIRO.",
         audio: {
           output: {
             voice: "shimmer", // Voz suave, natural e acolhedora - melhor qualidade
