@@ -39,10 +39,18 @@ export async function POST(request: Request) {
   const supabase = createSupabaseAdmin()
 
   // Handle the event
+  console.log(`[WEBHOOK] Evento recebido: ${event.type}`, { event_id: event.id })
+
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session
       const userId = session.metadata?.user_id
+
+      console.log(`[WEBHOOK] checkout.session.completed`, {
+        session_id: session.id,
+        user_id: userId,
+        subscription_id: session.subscription
+      })
 
       if (userId && session.subscription) {
         try {
@@ -68,11 +76,22 @@ export async function POST(request: Request) {
           })
 
           if (error) {
-            console.error('Erro ao salvar assinatura no checkout.session.completed:', error)
+            console.error('[WEBHOOK] Erro ao salvar assinatura no checkout.session.completed:', error)
+          } else {
+            console.log('[WEBHOOK] ✅ Assinatura salva com sucesso no checkout.session.completed', {
+              user_id: userId,
+              subscription_id: subscription.id,
+              status: subscription.status
+            })
           }
         } catch (error) {
-          console.error('Erro ao processar checkout.session.completed:', error)
+          console.error('[WEBHOOK] Erro ao processar checkout.session.completed:', error)
         }
+      } else {
+        console.warn('[WEBHOOK] checkout.session.completed sem user_id ou subscription', {
+          user_id: userId,
+          subscription: session.subscription
+        })
       }
       break
     }
@@ -119,13 +138,19 @@ export async function POST(request: Request) {
           })
 
           if (error) {
-            console.error('Erro ao atualizar assinatura no customer.subscription.updated:', error)
+            console.error('[WEBHOOK] Erro ao atualizar assinatura no customer.subscription.updated:', error)
+          } else {
+            console.log('[WEBHOOK] ✅ Assinatura atualizada com sucesso no customer.subscription.updated', {
+              user_id: userId,
+              subscription_id: subscription.id,
+              status: subscription.status
+            })
           }
         } catch (error) {
-          console.error('Erro ao processar customer.subscription.updated:', error)
+          console.error('[WEBHOOK] Erro ao processar customer.subscription.updated:', error)
         }
       } else {
-        console.warn('customer.subscription.updated: user_id não encontrado para subscription', subscription.id)
+        console.warn('[WEBHOOK] customer.subscription.updated: user_id não encontrado para subscription', subscription.id)
       }
       break
     }
@@ -178,15 +203,19 @@ export async function POST(request: Request) {
           })
 
           if (error) {
-            console.error('Erro ao criar assinatura no customer.subscription.created:', error)
+            console.error('[WEBHOOK] Erro ao criar assinatura no customer.subscription.created:', error)
           } else {
-            console.log('Assinatura criada/atualizada com sucesso:', subscription.id, 'para user:', userId)
+            console.log('[WEBHOOK] ✅ Assinatura criada/atualizada com sucesso no customer.subscription.created', {
+              user_id: userId,
+              subscription_id: subscription.id,
+              status: subscription.status
+            })
           }
         } catch (error) {
-          console.error('Erro ao processar customer.subscription.created:', error)
+          console.error('[WEBHOOK] Erro ao processar customer.subscription.created:', error)
         }
       } else {
-        console.warn('customer.subscription.created: user_id não encontrado para subscription', subscription.id)
+        console.warn('[WEBHOOK] customer.subscription.created: user_id não encontrado para subscription', subscription.id)
       }
       break
     }
@@ -220,19 +249,25 @@ export async function POST(request: Request) {
           }).eq('stripe_subscription_id', subscription.id)
 
           if (error) {
-            console.error('Erro ao cancelar assinatura:', error)
+            console.error('[WEBHOOK] Erro ao cancelar assinatura:', error)
+          } else {
+            console.log('[WEBHOOK] ✅ Assinatura cancelada com sucesso no customer.subscription.deleted', {
+              user_id: userId,
+              subscription_id: subscription.id
+            })
           }
         } catch (error) {
-          console.error('Erro ao processar customer.subscription.deleted:', error)
+          console.error('[WEBHOOK] Erro ao processar customer.subscription.deleted:', error)
         }
       }
       break
     }
 
     default:
-      console.log(`Evento não tratado: ${event.type}`)
+      console.log(`[WEBHOOK] Evento não tratado: ${event.type}`)
   }
 
+  console.log(`[WEBHOOK] ✅ Evento processado com sucesso: ${event.type}`)
   return NextResponse.json({ received: true })
 }
 
