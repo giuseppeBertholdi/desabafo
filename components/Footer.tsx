@@ -1,13 +1,6 @@
 'use client'
 
 export default function Footer() {
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id)
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
-  }
-
   return (
     <footer className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 border-t border-pink-200 dark:border-gray-800 bg-white dark:bg-gray-900 transition-colors">
       <div className="max-w-7xl mx-auto">
@@ -17,88 +10,29 @@ export default function Footer() {
           </p>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mb-8 sm:mb-12">
-          <div className="col-span-2 md:col-span-1">
-            <h3 className="text-gray-900 dark:text-white font-medium text-lg sm:text-xl mb-3 sm:mb-4">desabafo 💭</h3>
-            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-2 sm:mb-3">não é terapia. é só desabafo.</p>
-            <p className="text-xs sm:text-sm text-gray-400 dark:text-gray-500">
-              uma IA pra te ouvir, sempre.
-            </p>
+        <div className="text-center space-y-4 sm:space-y-6 mb-8 sm:mb-12">
+          <div>
+            <h3 className="text-gray-900 dark:text-white font-medium text-lg sm:text-xl mb-2">desabafo 💭</h3>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">não é terapia. é só desabafo.</p>
           </div>
           
-          <div>
-            <h4 className="text-gray-900 dark:text-white font-medium mb-3 sm:mb-4 text-xs sm:text-sm">produto</h4>
-            <ul className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-              <li>
-                <button
-                  onClick={() => scrollToSection('features')}
-                  className="hover:text-gray-900 dark:hover:text-white transition-colors"
-                >
-                  recursos
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => scrollToSection('precos')}
-                  className="hover:text-gray-900 dark:hover:text-white transition-colors"
-                >
-                  preços
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => scrollToSection('faq')}
-                  className="hover:text-gray-900 dark:hover:text-white transition-colors"
-                >
-                  dúvidas
-                </button>
-              </li>
-            </ul>
-          </div>
-          
-          <div>
-            <h4 className="text-gray-900 dark:text-white font-medium mb-3 sm:mb-4 text-xs sm:text-sm">legal</h4>
-            <ul className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-              <li>
-                <a href="#" className="hover:text-gray-900 dark:hover:text-white transition-colors">
-                  termos
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-gray-900 transition-colors">
-                  privacidade
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-gray-900 transition-colors">
-                  aviso médico
-                </a>
-              </li>
-            </ul>
-          </div>
-          
-          <div>
-            <h4 className="text-gray-900 dark:text-white font-medium mb-3 sm:mb-4 text-xs sm:text-sm">contato</h4>
-            <ul className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-              <li>
-                <a href="mailto:oi@desabafo.com" className="hover:text-gray-900 dark:hover:text-white transition-colors">
-                  oi@desabafo.com
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-gray-900 dark:hover:text-white transition-colors">
-                  suporte
-                </a>
-              </li>
-            </ul>
+          <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6 text-xs sm:text-sm">
+            <a href="/termos" className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+              termos de uso
+            </a>
+            <span className="text-gray-300 dark:text-gray-700">•</span>
+            <a href="/privacidade" className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+              privacidade
+            </a>
+            <span className="text-gray-300 dark:text-gray-700">•</span>
+            <a href="mailto:giuseppe.bertholdi@gmail.com" className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+              giuseppe.bertholdi@gmail.com
+            </a>
           </div>
         </div>
         
         <div className="pt-6 sm:pt-8 border-t border-pink-100 dark:border-gray-800 text-center px-2">
-          <p className="text-xs sm:text-sm text-gray-400 dark:text-gray-500">
-            feito com 💜 por pessoas que acreditam em autocuidado
-          </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 sm:mt-2">
+          <p className="text-xs text-gray-400 dark:text-gray-500">
             © {new Date().getFullYear()} desabafo
           </p>
         </div>
