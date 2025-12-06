@@ -107,7 +107,7 @@ export default function TermosPage() {
               7. limitação de responsabilidade
             </h2>
             <p className="leading-relaxed">
-              o desabafo é fornecido "como está" e "conforme disponível". não garantimos que o serviço será 
+              o desabafo é fornecido &quot;como está&quot; e &quot;conforme disponível&quot;. não garantimos que o serviço será 
               ininterrupto, seguro ou livre de erros. não nos responsabilizamos por quaisquer danos diretos, 
               indiretos, incidentais ou consequenciais resultantes do uso ou incapacidade de usar o serviço.
             </p>
