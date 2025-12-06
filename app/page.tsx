@@ -4,27 +4,22 @@ import Hero from '@/components/Hero'
 
 // Lazy load componentes pesados para melhorar performance inicial
 const Features = dynamic(() => import('@/components/Features'), {
-  loading: () => <div className="h-96" />,
   ssr: true,
 })
 
 const Testimonials = dynamic(() => import('@/components/Testimonials'), {
-  loading: () => <div className="h-96" />,
   ssr: true,
 })
 
 const Pricing = dynamic(() => import('@/components/Pricing'), {
-  loading: () => <div className="h-96" />,
   ssr: true,
 })
 
 const FAQ = dynamic(() => import('@/components/FAQ'), {
-  loading: () => <div className="h-96" />,
   ssr: true,
 })
 
 const CTA = dynamic(() => import('@/components/CTA'), {
-  loading: () => <div className="h-96" />,
   ssr: true,
 })
 

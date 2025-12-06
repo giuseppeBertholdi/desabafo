@@ -17,7 +17,7 @@ export default function FAQ() {
     },
     {
       question: 'preciso pagar pra usar o desabafo?',
-      answer: 'oferecemos um plano gratuito com 100 respostas da IA por mês no chat texto. pra conversas ilimitadas, chat por voz, insights completos e todos os recursos avançados, temos o plano pro com teste gratuito de 3 dias. você pode cancelar a qualquer momento.',
+      answer: 'oferecemos um plano gratuito com 100 mensagens de chat por mês, 10 entradas de diário por mês e 3 insights por mês. pra conversas ilimitadas, chat por voz, diário ilimitado e insights completos, temos o plano pro. você pode cancelar a qualquer momento.',
     },
     {
       question: 'a IA realmente aprende comigo?',

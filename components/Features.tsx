@@ -78,25 +78,31 @@ export default function Features() {
                 feature.imageSide === 'right' ? 'lg:flex-row-reverse' : 'lg:flex-row'
               } items-center gap-12 lg:gap-16`}
             >
-              {/* Espaço para imagem */}
+              {/* Card visual ao invés de imagem */}
               <div className="w-full lg:w-1/2">
-                <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-pink-100 to-purple-100 aspect-video flex items-center justify-center">
+                <motion.div 
+                  whileHover={{ scale: 1.02 }}
+                  className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-pink-50 via-purple-50 to-pink-100 dark:from-gray-800 dark:via-purple-900/20 dark:to-gray-800 p-8 sm:p-12 shadow-xl border border-pink-100 dark:border-gray-700"
+                >
                   <div className="text-center">
-                    <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
-                      imagem em breve
-                    </p>
-                    <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      whileInView={{ scale: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.5, delay: 0.2 }}
+                      className="text-7xl sm:text-8xl mb-4"
+                    >
+                      {feature.emoji}
+                    </motion.div>
+                    <h4 className="text-xl sm:text-2xl font-light text-gray-900 dark:text-white mb-3">
                       {feature.title}
-                    </p>
+                    </h4>
                   </div>
-                  {/* Quando tiver a imagem, substitua por:
-                  <img 
-                    src="/path/to/image.jpg" 
-                    alt={feature.title}
-                    className="w-full h-full object-cover"
-                  />
-                  */}
-                </div>
+                  
+                  {/* Elementos decorativos */}
+                  <div className="absolute top-4 right-4 w-20 h-20 bg-pink-200 dark:bg-pink-900/30 rounded-full blur-2xl" />
+                  <div className="absolute bottom-4 left-4 w-24 h-24 bg-purple-200 dark:bg-purple-900/30 rounded-full blur-2xl" />
+                </motion.div>
               </div>
 
               {/* Texto */}

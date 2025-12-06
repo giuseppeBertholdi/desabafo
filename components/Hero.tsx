@@ -151,7 +151,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-5xl sm:text-6xl lg:text-7xl font-normal tracking-tight text-gray-900 dark:text-white mb-10 leading-[1.1]"
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-normal tracking-tight text-gray-900 dark:text-white mb-8 sm:mb-10 leading-[1.1] px-4"
           >
             não é terapia.<br />
             <motion.span
@@ -167,7 +167,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-xl sm:text-2xl font-light text-gray-600 dark:text-gray-300 mb-6 max-w-2xl mx-auto leading-relaxed"
+            className="text-lg sm:text-xl md:text-2xl font-light text-gray-600 dark:text-gray-300 mb-4 sm:mb-6 max-w-2xl mx-auto leading-relaxed px-4"
           >
             converse por texto ou voz com uma IA que te entende, sem julgamentos.
           </motion.p>
@@ -175,7 +175,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="text-base sm:text-lg font-light text-gray-500 dark:text-gray-400 max-w-xl mx-auto"
+            className="text-sm sm:text-base md:text-lg font-light text-gray-500 dark:text-gray-400 max-w-xl mx-auto px-4"
           >
             disponível 24/7, até nas madrugadas mais difíceis ✨
           </motion.p>
@@ -183,18 +183,18 @@ export default function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.6 }}
-            className="flex flex-wrap items-center justify-center gap-4 mt-8 text-sm text-gray-500 dark:text-gray-400"
+            className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 mt-6 sm:mt-8 text-xs sm:text-sm text-gray-500 dark:text-gray-400 px-4"
           >
-            <span className="flex items-center gap-2">
-              <span className="text-pink-500">💬</span> chat por texto
+            <span className="flex items-center gap-1.5 sm:gap-2">
+              <span className="text-pink-500">💬</span> <span className="hidden xs:inline">chat por </span>texto
             </span>
-            <span>•</span>
-            <span className="flex items-center gap-2">
-              <span className="text-purple-500">🎤</span> chat por voz
+            <span className="hidden xs:inline">•</span>
+            <span className="flex items-center gap-1.5 sm:gap-2">
+              <span className="text-purple-500">🎤</span> <span className="hidden xs:inline">chat por </span>voz
             </span>
-            <span>•</span>
-            <span className="flex items-center gap-2">
-              <span className="text-blue-500">📊</span> insights personalizados
+            <span className="hidden xs:inline">•</span>
+            <span className="flex items-center gap-1.5 sm:gap-2">
+              <span className="text-blue-500">📊</span> insights
             </span>
           </motion.div>
         </motion.div>
@@ -203,13 +203,13 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.6 }}
-          className="mb-16"
+          className="mb-12 sm:mb-16 px-4"
         >
           <motion.a
             href="/login"
             whileHover={{ scale: 1.02, y: -3 }}
             whileTap={{ scale: 0.98 }}
-            className="inline-block px-12 py-5 bg-gray-900 text-white rounded-full font-medium text-lg shadow-xl hover:shadow-2xl transition-all duration-200"
+            className="inline-block px-8 sm:px-12 py-4 sm:py-5 bg-gray-900 dark:bg-pink-600 text-white rounded-full font-medium text-base sm:text-lg shadow-xl hover:shadow-2xl transition-all duration-200"
           >
             começar grátis →
           </motion.a>
@@ -219,16 +219,16 @@ export default function Hero() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.8 }}
-          className="mt-16"
+          className="mt-12 sm:mt-16 px-4"
         >
-          <div className="flex items-center justify-center gap-8 text-sm text-gray-400 dark:text-gray-500">
-            <span className="flex items-center gap-2">
-              <span className="text-green-500">●</span> disponível 24/7
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 lg:gap-8 text-xs sm:text-sm text-gray-400 dark:text-gray-500">
+            <span className="flex items-center gap-1.5 sm:gap-2">
+              <span className="text-green-500">●</span> <span className="whitespace-nowrap">disponível 24/7</span>
             </span>
-            <span>•</span>
-            <span>sem compromisso</span>
-            <span>•</span>
-            <span>totalmente privado 🔒</span>
+            <span className="hidden xs:inline">•</span>
+            <span className="whitespace-nowrap">sem compromisso</span>
+            <span className="hidden xs:inline">•</span>
+            <span className="whitespace-nowrap">totalmente privado 🔒</span>
           </div>
         </motion.div>
       </div>

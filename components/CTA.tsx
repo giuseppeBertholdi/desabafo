@@ -44,14 +44,14 @@ export default function CTA() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="bg-gradient-to-r from-pink-500 to-pink-600 rounded-2xl p-12 sm:p-16 shadow-xl"
+          className="bg-gradient-to-r from-pink-500 to-pink-600 rounded-2xl p-8 sm:p-12 md:p-16 shadow-xl"
         >
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl sm:text-5xl lg:text-6xl font-light text-white mb-6 leading-tight tracking-wide"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-white mb-4 sm:mb-6 leading-tight tracking-wide px-4"
           >
             pronto pra se conhecer melhor?
           </motion.h2>
@@ -60,7 +60,7 @@ export default function CTA() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-xl sm:text-2xl text-pink-50 mb-10 font-light max-w-2xl mx-auto"
+            className="text-lg sm:text-xl md:text-2xl text-pink-50 mb-8 sm:mb-10 font-light max-w-2xl mx-auto px-4"
           >
             comece hoje, é grátis ✨
           </motion.p>
@@ -69,12 +69,13 @@ export default function CTA() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.3 }}
+            className="px-4"
           >
             <motion.a
               href="/login"
               whileHover={{ scale: 1.02, y: -3 }}
               whileTap={{ scale: 0.98 }}
-              className="inline-block px-12 py-5 bg-white text-gray-900 rounded-full font-medium text-lg shadow-xl hover:shadow-2xl transition-all"
+              className="inline-block px-8 sm:px-12 py-4 sm:py-5 bg-white text-gray-900 rounded-full font-medium text-base sm:text-lg shadow-xl hover:shadow-2xl transition-all"
             >
               começar agora →
             </motion.a>
@@ -84,7 +85,7 @@ export default function CTA() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="mt-6 text-base text-pink-100"
+            className="mt-4 sm:mt-6 text-sm sm:text-base text-pink-100 px-4"
           >
             grátis pra sempre • sem cartão • sem pegadinha
           </motion.p>

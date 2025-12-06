@@ -26,7 +26,7 @@ export default function Header() {
           >
             desabafo 💭
           </motion.a>
-          <nav className="hidden md:flex items-center gap-8 text-sm text-gray-600 dark:text-gray-300">
+          <nav className="hidden sm:flex items-center gap-4 lg:gap-8 text-xs sm:text-sm text-gray-600 dark:text-gray-300">
             <motion.button
               onClick={() => scrollToSection('features')}
               whileHover={{ y: -2 }}
@@ -45,18 +45,19 @@ export default function Header() {
               href="/login"
               whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.98 }}
-              className="px-6 py-2.5 bg-gray-900 dark:bg-pink-600 text-white rounded-full text-sm font-medium hover:bg-gray-800 dark:hover:bg-pink-700 transition-all shadow-sm hover:shadow-md"
+              className="px-4 sm:px-6 py-2 sm:py-2.5 bg-gray-900 dark:bg-pink-600 text-white rounded-full text-xs sm:text-sm font-medium hover:bg-gray-800 dark:hover:bg-pink-700 transition-all shadow-sm hover:shadow-md whitespace-nowrap"
             >
               entrar →
             </motion.a>
           </nav>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="md:hidden px-4 py-2 bg-pink-500 text-white rounded-full text-sm font-medium hover:bg-pink-600 transition-colors"
+          <motion.a
+            href="/login"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="sm:hidden px-5 py-2 bg-pink-500 text-white rounded-full text-sm font-medium hover:bg-pink-600 transition-colors"
           >
-            Menu
-          </motion.button>
+            entrar
+          </motion.a>
         </div>
       </div>
     </motion.header>

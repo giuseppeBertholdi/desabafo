@@ -232,7 +232,7 @@ export default function PricingClient({ userPlan = 'free' }: PricingClientProps)
               continuar com plano gratuito
             </button>
             <p className="text-xs text-gray-400 dark:text-gray-500 font-light mt-2">
-              10 conversas/mês • 10 entradas de diário • sem modo voz
+              100 mensagens/mês • 10 entradas de diário • 3 insights/mês • sem modo voz
             </p>
           </motion.div>
 
@@ -256,7 +256,7 @@ export default function PricingClient({ userPlan = 'free' }: PricingClientProps)
               com amor,
             </p>
             <p className="text-3xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
-              Giuseppe Bertholdi
+              fundador do desabafo
             </p>
           </motion.div>
         </div>
