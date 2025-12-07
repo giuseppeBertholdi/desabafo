@@ -22,15 +22,16 @@ async function handleCreateSession(request: NextRequest) {
     }
 
     // Verificar plano do usuário e limitar sessões se for free
+    // Pro (active ou trialing) tem sessões ilimitadas
     const { data: subscription } = await supabase
       .from('user_subscriptions')
       .select('*')
       .eq('user_id', session.user.id)
-      .eq('status', 'active')
+      .in('status', ['active', 'trialing'])
       .single()
 
+    // Apenas plano free tem limite de 10 sessões
     if (!subscription) {
-      // Plano free: verificar limite de 10 sessões
       const { count } = await supabase
         .from('chat_sessions')
         .select('*', { count: 'exact', head: true })
@@ -43,6 +44,7 @@ async function handleCreateSession(request: NextRequest) {
         )
       }
     }
+    // Se tiver subscription (Pro), não há limite - pode criar quantas sessões quiser
 
     // Criar sessão com tema se fornecido
     // Se skipSummary for true, não gerar resumo inicial
