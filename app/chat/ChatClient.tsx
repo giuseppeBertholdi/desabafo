@@ -1602,23 +1602,11 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                     onChange={(e) => {
                       setInput(e.target.value)
                       const textarea = e.target
-                      const container = textarea.parentElement
                       
                       // Ajustar altura automaticamente
                       textarea.style.height = 'auto'
                       const newHeight = Math.min(textarea.scrollHeight, 200) // Max 200px
                       textarea.style.height = `${newHeight}px`
-                      
-                      // Ajustar border-radius quando expandir
-                      if (container) {
-                        if (newHeight > 56) {
-                          container.classList.remove('rounded-full')
-                          container.classList.add('rounded-2xl')
-                        } else {
-                          container.classList.remove('rounded-2xl')
-                          container.classList.add('rounded-full')
-                        }
-                      }
                     }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
