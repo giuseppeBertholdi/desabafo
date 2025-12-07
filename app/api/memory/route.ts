@@ -31,7 +31,7 @@ export async function POST(request: Request) {
       .limit(10)
 
     // Usar IA para extrair informações importantes
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-001' })
     
     const conversationText = messages
       .slice(-20) // Últimas 20 mensagens
