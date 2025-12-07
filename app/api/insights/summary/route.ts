@@ -37,7 +37,7 @@ async function handleSummaryRequest(request: NextRequest) {
 
     // Gerar resumo detalhado com Gemini
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-1.5-flash',
       generationConfig: {
         maxOutputTokens: 800, // Permitir resumo longo e detalhado
         temperature: 0.8,

@@ -78,7 +78,7 @@ function detectEmergencyKeywords(message: string): boolean {
 async function detectEmergencyWithAI(message: string, genAIInstance: GoogleGenerativeAI): Promise<boolean> {
   try {
     const model = genAIInstance.getGenerativeModel({ 
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-1.5-flash',
       generationConfig: {
         maxOutputTokens: 10, // Resposta curta: apenas SIM ou NAO
         temperature: 0.1, // Baixa temperatura para resposta mais determinística
@@ -370,7 +370,7 @@ Você é um melhor amigo de verdade: empático mas também honesto, acolhedor ma
     
     // Configurar o modelo
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-1.5-flash',
       systemInstruction: systemInstruction
     })
 
@@ -472,7 +472,7 @@ se você não conseguir ligar agora, posso te ajudar a encontrar outras formas d
         
         if (userMsgs.length >= 3 && genAI) {
           // Usar IA para extrair memórias
-          const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' })
+          const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
           // Limitar a últimas 10 mensagens para reduzir tokens no processamento de memórias
           const conversationText = allMessages.slice(-10).map((m: any) => `${m.role === 'user' ? 'Usuário' : 'IA'}: ${m.content}`).join('\n')
           

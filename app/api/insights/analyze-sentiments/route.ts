@@ -39,7 +39,7 @@ export async function POST(request: Request) {
 
     // Gerar análise com Gemini
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-1.5-flash',
       generationConfig: {
         maxOutputTokens: 200, // Limitar tokens de saída
         temperature: 0.3, // Mais determinístico

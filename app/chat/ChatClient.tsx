@@ -1306,7 +1306,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
           {/* Messages - Estilo Calm com mais espaçamento */}
           {/* Ocultar mensagens no modo voz */}
           {!voiceMode && (
-            <div className="space-y-6 mb-10">
+            <div className="space-y-6 mb-10 pt-20 sm:pt-24">
               <AnimatePresence>
                 {messages.map((message) => (
                   <motion.div
@@ -1529,8 +1529,8 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                     disabled={realtimeSession.isConnecting}
                     className={`relative w-28 h-28 sm:w-32 sm:h-32 rounded-full flex items-center justify-center transition-all cursor-pointer ${
                       (isRecording || realtimeSession.isActive)
-                        ? 'bg-gradient-to-br from-pink-400 to-purple-500 shadow-lg shadow-pink-200/50 dark:shadow-pink-900/30'
-                        : 'bg-gradient-to-br from-pink-300 to-purple-400 hover:from-pink-400 hover:to-purple-500 shadow-md shadow-pink-100/50 dark:shadow-pink-900/20'
+                        ? 'bg-gradient-to-br from-pink-400 to-purple-500'
+                        : 'bg-gradient-to-br from-pink-300 to-purple-400 hover:from-pink-400 hover:to-purple-500'
                     } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     {realtimeSession.isConnecting ? (

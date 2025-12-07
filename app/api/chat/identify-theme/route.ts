@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     }
 
     // Usar IA para identificar o tema
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
     
     const prompt = `Analise as seguintes mensagens de uma conversa e identifique o tema principal. 
 

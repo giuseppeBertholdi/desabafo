@@ -22,7 +22,7 @@ async function handleJournalInsights(request: NextRequest) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
     
     const entriesText = entries.map((e: any, i: number) => 
       `${i + 1}. [${e.date}] ${e.mood ? `Humor: ${e.mood}. ` : ''}${e.content}`
