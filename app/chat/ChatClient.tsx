@@ -1309,20 +1309,14 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                 <div className="w-10 h-10 sm:w-11 sm:h-11 flex-shrink-0 flex items-center justify-center">
                   <motion.div
                     animate={{ 
-                      scale: [1, 1.15, 1],
-                      opacity: [0.6, 1, 0.6],
-                      boxShadow: [
-                        '0 0 0 0 rgba(236, 72, 153, 0.4)',
-                        '0 0 0 8px rgba(236, 72, 153, 0)',
-                        '0 0 0 0 rgba(236, 72, 153, 0)'
-                      ]
+                      rotate: 360
                     }}
                     transition={{ 
-                      duration: 1.5, 
+                      duration: 2, 
                       repeat: Infinity,
-                      ease: "easeInOut"
+                      ease: "linear"
                     }}
-                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 shadow-md shadow-pink-200/30 dark:shadow-pink-900/20"
+                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-pink-400 to-pink-600"
                   />
                 </div>
                 <div className="flex-1 space-y-2">
@@ -1380,8 +1374,41 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                   </div>
                 </motion.div>
                 
-                {/* Botão grande e centralizado - Estilo Calm */}
+                {/* Botão grande e centralizado com animação pulsante suave - Estilo Calm */}
                 <div className="relative flex items-center justify-center">
+                  {/* Círculos pulsantes de fundo (efeito Calm mais suave) */}
+                  {(isRecording || realtimeSession.isActive) && (
+                    <>
+                      <motion.div
+                        animate={{
+                          scale: [1, 1.3, 1],
+                          opacity: [0.3, 0, 0.3],
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                        className="absolute rounded-full bg-gradient-to-br from-pink-200/50 to-purple-200/50 dark:from-pink-900/30 dark:to-purple-900/30"
+                        style={{ width: '160px', height: '160px', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
+                      />
+                      <motion.div
+                        animate={{
+                          scale: [1, 1.5, 1],
+                          opacity: [0.2, 0, 0.2],
+                        }}
+                        transition={{
+                          duration: 2.5,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                          delay: 0.3
+                        }}
+                        className="absolute rounded-full bg-gradient-to-br from-pink-200/40 to-purple-200/40 dark:from-pink-900/20 dark:to-purple-900/20"
+                        style={{ width: '180px', height: '180px', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
+                      />
+                    </>
+                  )}
+                  
                   {/* Botão principal - Estilo Calm mais suave */}
                   <motion.button
                     whileHover={!(isRecording || realtimeSession.isActive || realtimeSession.isConnecting) ? { scale: 1.05 } : {}}
@@ -1464,37 +1491,6 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                 >
                   ou escreva aqui
                 </motion.button>
-
-                {/* Conversa de voz - Transcrições */}
-                {messages.length > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="w-full max-w-2xl mx-auto mt-8 space-y-4 max-h-[400px] overflow-y-auto px-4 scrollbar-thin scrollbar-thumb-pink-300 dark:scrollbar-thumb-pink-700 scrollbar-track-transparent"
-                  >
-                    {messages.map((message) => (
-                      <motion.div
-                        key={message.id}
-                        initial={{ opacity: 0, x: message.role === 'user' ? -20 : 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div
-                          className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-sm ${
-                            message.role === 'user'
-                              ? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white'
-                              : 'bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 border border-slate-200/60 dark:border-slate-700/60'
-                          }`}
-                        >
-                          <p className="text-sm font-light leading-relaxed whitespace-pre-wrap">
-                            {message.content}
-                          </p>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                )}
               </div>
             ) : (
               /* Modo Texto - Estilo Calm */
