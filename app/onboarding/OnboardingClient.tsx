@@ -61,6 +61,24 @@ export default function OnboardingClient() {
     }
   }
 
+  const interests = [
+    'ansiedade',
+    'relacionamentos',
+    'trabalho',
+    'tristeza',
+    'dúvidas',
+    'conquistas',
+    'sono',
+    'estudos',
+    'família',
+    'motivação',
+    'raiva',
+    'calma',
+    'objetivos',
+    'amizade',
+    'crescimento pessoal'
+  ]
+
   const toggleInterest = (interest: string) => {
     if (interest === 'todos') {
       // Se clicar em "todos", seleciona ou deseleciona todos
@@ -83,24 +101,6 @@ export default function OnboardingClient() {
   
   // Verificar se todos estão selecionados
   const allSelected = data.interests.length === interests.length && interests.length > 0
-
-  const interests = [
-    'ansiedade',
-    'relacionamentos',
-    'trabalho',
-    'tristeza',
-    'dúvidas',
-    'conquistas',
-    'sono',
-    'estudos',
-    'família',
-    'motivação',
-    'raiva',
-    'calma',
-    'objetivos',
-    'amizade',
-    'crescimento pessoal'
-  ]
 
   const currentStates = [
     'me sinto bem, só quero conversar',
