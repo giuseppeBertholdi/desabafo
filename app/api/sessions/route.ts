@@ -105,7 +105,7 @@ async function handleUpdateSession(request: NextRequest) {
     }
 
     // Gerar resumo com Gemini
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-001' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
     
     const conversationText = messages
       .slice(-15) // Últimas 15 mensagens
