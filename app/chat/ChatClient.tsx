@@ -11,6 +11,7 @@ import { ChatMessagesSkeleton } from '@/components/Skeletons'
 import { useUserPlan } from '@/lib/getUserPlanClient'
 import { useRealtimeMini } from '@/hooks/useRealtimeMini'
 import { useToast } from '@/contexts/ToastContext'
+import MarkdownRenderer from '@/components/MarkdownRenderer'
 
 interface ChatClientProps {
   firstName: string
@@ -1391,9 +1392,10 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                         </div>
                       </motion.div>
                     ) : (
-                      <p className="text-[15px] sm:text-base font-light leading-[1.7] text-slate-700 dark:text-slate-200 break-words tracking-wide">
-                        {message.content}
-                      </p>
+                      <MarkdownRenderer 
+                        content={message.content}
+                        className="break-words tracking-wide"
+                      />
                     )}
                   </div>
                 </motion.div>

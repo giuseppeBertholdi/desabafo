@@ -6,6 +6,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { motion } from 'framer-motion'
 import Sidebar from '@/components/Sidebar'
 import { useUserPlan } from '@/lib/getUserPlanClient'
+import MarkdownRenderer from '@/components/MarkdownRenderer'
 
 interface InsightsData {
   totalMessages: number
@@ -710,9 +711,10 @@ export default function InsightsClient() {
                   <h2 className="text-xl font-light text-gray-900 dark:text-white mb-4">
                     resumo do {getPeriodLabel()}
                   </h2>
-                  <p className="text-base text-gray-700 dark:text-gray-300 font-light leading-relaxed">
-                    {data.summary}
-                  </p>
+                  <MarkdownRenderer 
+                    content={data.summary}
+                    className="text-base text-gray-700 dark:text-gray-300 font-light leading-relaxed"
+                  />
                 </motion.div>
               ) : (
                 <motion.div
