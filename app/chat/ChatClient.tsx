@@ -466,7 +466,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
   const [userAvatar, setUserAvatar] = useState<string | null>(null)
   const [showEmojiAnimation, setShowEmojiAnimation] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const mediaStreamRef = useRef<MediaStream | null>(null)
 
@@ -1183,12 +1183,6 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
     }
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
-  }
 
   const handleClear = () => {
     setInput('')
@@ -1598,19 +1592,49 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                 </motion.button>
               </div>
             ) : (
-              /* Modo Texto - Estilo Calm */
+              /* Modo Texto - Estilo Calm com textarea expansível */
               <>
-                <div className="relative bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-full border border-slate-200/60 dark:border-slate-700/60 hover:border-rose-300/60 dark:hover:border-rose-700/60 transition-all shadow-sm">
-                  {/* Input */}
-                  <input
+                <div className="relative bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-full border border-slate-200/60 dark:border-slate-700/60 hover:border-rose-300/60 dark:hover:border-rose-700/60 transition-all shadow-sm min-h-[56px] sm:min-h-[64px] flex items-end" id="chat-input-container">
+                  {/* Textarea que cresce para cima */}
+                  <textarea
                     ref={inputRef}
-                    type="text"
                     value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={handleKeyPress}
+                    onChange={(e) => {
+                      setInput(e.target.value)
+                      const textarea = e.target
+                      const container = textarea.parentElement
+                      
+                      // Ajustar altura automaticamente
+                      textarea.style.height = 'auto'
+                      const newHeight = Math.min(textarea.scrollHeight, 200) // Max 200px
+                      textarea.style.height = `${newHeight}px`
+                      
+                      // Ajustar border-radius quando expandir
+                      if (container) {
+                        if (newHeight > 56) {
+                          container.classList.remove('rounded-full')
+                          container.classList.add('rounded-2xl')
+                        } else {
+                          container.classList.remove('rounded-2xl')
+                          container.classList.add('rounded-full')
+                        }
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault()
+                        handleSend()
+                      }
+                    }}
                     placeholder="escreva sua mensagem..."
                     disabled={isLoading || isSending}
-                    className="w-full bg-transparent rounded-full py-4 sm:py-5 px-6 sm:px-7 pr-16 sm:pr-20 text-[15px] sm:text-base text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none font-light tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+                    rows={1}
+                    style={{
+                      resize: 'none',
+                      overflow: 'hidden',
+                      maxHeight: '200px',
+                    }}
+                    className="w-full bg-transparent rounded-full py-4 sm:py-5 px-6 sm:px-7 pr-16 sm:pr-20 text-[15px] sm:text-base text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none font-light tracking-wide disabled:opacity-50 disabled:cursor-not-allowed leading-relaxed"
                   />
 
                   {/* Botão enviar - Estilo Calm */}
@@ -1620,7 +1644,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                     whileHover={!isLoading && !isSending && input.trim() ? { scale: 1.08 } : {}}
                     whileTap={!isLoading && !isSending && input.trim() ? { scale: 0.92 } : {}}
                     transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-                    className="absolute right-2 sm:right-2.5 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 hover:from-pink-500 hover:to-pink-700 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer shadow-sm hover:shadow-md"
+                    className="absolute right-2 sm:right-2.5 bottom-2 sm:bottom-2.5 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 hover:from-pink-500 hover:to-pink-700 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer shadow-sm hover:shadow-md flex-shrink-0"
                   >
                     <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />

@@ -164,7 +164,7 @@ export default function PricingClient({ userPlan = 'free' }: PricingClientProps)
                 <h2 className="text-xl font-light text-gray-900 dark:text-white mb-4">anual</h2>
                 <div className="flex items-baseline justify-center gap-1 mb-2">
                   <span className="text-4xl font-light text-gray-900 dark:text-white">R$</span>
-                  <span className="text-5xl font-light text-gray-900 dark:text-white">23</span>
+                  <span className="text-5xl font-light text-gray-900 dark:text-white">23,00</span>
                 </div>
                 <p className="text-sm text-gray-500 dark:text-gray-400 font-light">
                   por mês

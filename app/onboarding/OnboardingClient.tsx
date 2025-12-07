@@ -62,13 +62,27 @@ export default function OnboardingClient() {
   }
 
   const toggleInterest = (interest: string) => {
-    setData(prev => ({
-      ...prev,
-      interests: prev.interests.includes(interest)
-        ? prev.interests.filter(i => i !== interest)
-        : [...prev.interests, interest]
-    }))
+    if (interest === 'todos') {
+      // Se clicar em "todos", seleciona ou deseleciona todos
+      if (data.interests.length === interests.length) {
+        setData(prev => ({ ...prev, interests: [] }))
+      } else {
+        setData(prev => ({ ...prev, interests: [...interests] }))
+      }
+    } else {
+      const newInterests = data.interests.includes(interest)
+        ? data.interests.filter(i => i !== interest)
+        : [...data.interests, interest]
+      
+      setData(prev => ({
+        ...prev,
+        interests: newInterests
+      }))
+    }
   }
+  
+  // Verificar se todos estão selecionados
+  const allSelected = data.interests.length === interests.length && interests.length > 0
 
   const interests = [
     'ansiedade',
@@ -200,6 +214,18 @@ export default function OnboardingClient() {
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {/* Botão "todos" primeiro */}
+                <button
+                  onClick={() => toggleInterest('todos')}
+                  className={`px-4 py-3 rounded-lg border transition-all font-light text-sm cursor-pointer col-span-2 sm:col-span-1 ${
+                    allSelected
+                      ? 'bg-pink-600 text-white border-pink-600'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-pink-300'
+                  }`}
+                  type="button"
+                >
+                  todos
+                </button>
                 {interests.map((interest) => (
                   <button
                     key={interest}
