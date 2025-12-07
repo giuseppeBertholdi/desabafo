@@ -13,14 +13,14 @@ import { Redis } from '@upstash/redis'
 // Configuração de limites por plano
 export const RATE_LIMITS = {
   free: {
-    chat: { requests: 10, window: 60 * 60 * 1000 }, // 10 por hora
+    chat: { requests: 1000000, window: 60 * 60 * 1000 }, // Praticamente infinito
     insights: { requests: 5, window: 60 * 60 * 1000 }, // 5 por hora
     journal: { requests: 10, window: 60 * 60 * 1000 }, // 10 por hora
     sessions: { requests: 10, window: 24 * 60 * 60 * 1000 }, // 10 por dia
     general: { requests: 100, window: 60 * 1000 }, // 100 por minuto
   },
   pro: {
-    chat: { requests: 1000, window: 60 * 60 * 1000 }, // 1000 por hora
+    chat: { requests: 1000000, window: 60 * 60 * 1000 }, // Praticamente infinito
     insights: { requests: 100, window: 60 * 60 * 1000 }, // 100 por hora
     journal: { requests: 1000, window: 60 * 60 * 1000 }, // 1000 por hora
     sessions: { requests: 1000, window: 24 * 60 * 60 * 1000 }, // 1000 por dia

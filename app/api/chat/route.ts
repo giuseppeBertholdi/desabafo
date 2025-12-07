@@ -123,10 +123,7 @@ async function handleChatRequest(request: NextRequest) {
       return NextResponse.json({ error: 'Mensagens inválidas' }, { status: 400 })
     }
 
-    // Limitar tamanho das mensagens (anti-abuse)
-    if (messages.length > 50) {
-      return NextResponse.json({ error: 'Muitas mensagens no contexto' }, { status: 400 })
-    }
+    // Não limitar quantidade de mensagens - apenas o contexto enviado para a API será limitado
 
     // Sanitizar todas as mensagens
     const sanitizedMessages = messages.map(msg => ({
@@ -374,7 +371,8 @@ Você é um melhor amigo de verdade: empático mas também honesto, acolhedor ma
       systemInstruction: systemInstruction
     })
 
-    // Filtrar e limitar histórico para reduzir tokens (últimas 20 mensagens)
+    // Filtrar e limitar histórico para reduzir tokens (últimas 30 mensagens)
+    // Nota: Não limitamos o array de mensagens, apenas o contexto enviado para a API
     const conversationHistory = messages
       .slice(0, -1)
       .filter((msg: any, index: number) => {
@@ -382,7 +380,7 @@ Você é um melhor amigo de verdade: empático mas também honesto, acolhedor ma
         if (index === 0 && msg.role === 'assistant') return false
         return true
       })
-      .slice(-20) // Limitar a últimas 20 mensagens para reduzir custos
+      .slice(-30) // Limitar contexto às últimas 30 mensagens para reduzir custos
 
     // Criar o histórico de conversa no formato do Gemini
     const history = conversationHistory.map((msg: any) => ({
@@ -573,11 +571,23 @@ Retorne APENAS as novas memórias importantes (máximo 3), uma por linha, de for
     }
     
     // Verificar se é erro de rate limit da API
-    if (error?.status === 429 || error?.message?.includes('quota') || error?.message?.includes('rate limit')) {
-      console.error('Rate limit da API Gemini excedido')
+    if (error?.status === 429 || error?.message?.includes('quota') || error?.message?.includes('rate limit') || error?.message?.includes('429')) {
+      console.error('Rate limit da API Gemini excedido:', {
+        status: error?.status,
+        message: error?.message,
+        errorDetails: error?.errorDetails
+      })
       return NextResponse.json(
-        { error: 'Muitas requisições. Por favor, aguarde um momento e tente novamente.' },
-        { status: 429 }
+        { 
+          error: 'Muitas requisições à API. Por favor, aguarde alguns segundos e tente novamente.',
+          retryAfter: 10 // Sugerir aguardar 10 segundos
+        },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': '10'
+          }
+        }
       )
     }
     
