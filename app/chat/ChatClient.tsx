@@ -1473,41 +1473,8 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                   </div>
                 </motion.div>
                 
-                {/* Botão grande e centralizado com animação pulsante suave - Estilo Calm */}
+                {/* Botão grande e centralizado - Estilo Calm */}
                 <div className="relative flex items-center justify-center">
-                  {/* Círculos pulsantes de fundo (efeito Calm mais suave) */}
-                  {(isRecording || realtimeSession.isActive) && (
-                    <>
-                      <motion.div
-                        animate={{
-                          scale: [1, 1.3, 1],
-                          opacity: [0.3, 0, 0.3],
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
-                        className="absolute rounded-full bg-gradient-to-br from-pink-200/50 to-purple-200/50 dark:from-pink-900/30 dark:to-purple-900/30"
-                        style={{ width: '160px', height: '160px', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
-                      />
-                      <motion.div
-                        animate={{
-                          scale: [1, 1.5, 1],
-                          opacity: [0.2, 0, 0.2],
-                        }}
-                        transition={{
-                          duration: 2.5,
-                          repeat: Infinity,
-                          ease: "easeInOut",
-                          delay: 0.3
-                        }}
-                        className="absolute rounded-full bg-gradient-to-br from-pink-200/40 to-purple-200/40 dark:from-pink-900/20 dark:to-purple-900/20"
-                        style={{ width: '180px', height: '180px', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
-                      />
-                    </>
-                  )}
-                  
                   {/* Botão principal - Estilo Calm mais suave */}
                   <motion.button
                     whileHover={!(isRecording || realtimeSession.isActive || realtimeSession.isConnecting) ? { scale: 1.05 } : {}}
