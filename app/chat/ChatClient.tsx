@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { supabase } from '@/lib/supabaseClient'
 import Sidebar from '@/components/Sidebar'
 import ProBanner from '@/components/ProBanner'
 import { ChatMessagesSkeleton } from '@/components/Skeletons'
@@ -371,6 +372,37 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
   const supabase = createClientComponentClient()
   const { plan } = useUserPlan()
   const { showError, showSuccess, showInfo } = useToast()
+
+  // Helper para renovar sessão se necessário
+  const refreshSessionIfNeeded = useCallback(async (): Promise<boolean> => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession()
+      if (error || !session) {
+        console.error('Erro ao obter sessão:', error)
+        return false
+      }
+      
+      // Verificar se a sessão está próxima de expirar (menos de 5 minutos)
+      const expiresAt = session.expires_at
+      if (expiresAt) {
+        const expiresIn = expiresAt - Math.floor(Date.now() / 1000)
+        if (expiresIn < 300) { // Menos de 5 minutos
+          console.log('Sessão próxima de expirar, renovando...')
+          const { data: refreshedSession, error: refreshError } = await supabase.auth.refreshSession()
+          if (refreshError || !refreshedSession.session) {
+            console.error('Erro ao renovar sessão:', refreshError)
+            return false
+          }
+          console.log('Sessão renovada com sucesso')
+          return true
+        }
+      }
+      return true
+    } catch (error) {
+      console.error('Erro ao verificar/renovar sessão:', error)
+      return false
+    }
+  }, [])
   
   // Mensagem inicial baseada no tema ou padrão
   const getInitialMessage = () => {
@@ -739,6 +771,29 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
           statusText: response.statusText,
           error: errorData
         })
+        
+        // Se for erro de autenticação, tentar renovar sessão
+        if (response.status === 401 || response.status === 403) {
+          try {
+            const { data: { session }, error: refreshError } = await supabase.auth.refreshSession()
+            if (refreshError || !session) {
+              // Se não conseguir renovar, redirecionar para login
+              console.error('Erro ao renovar sessão:', refreshError)
+              showError('Sua sessão expirou. Redirecionando para login...')
+              setTimeout(() => {
+                window.location.href = '/login'
+              }, 2000)
+              throw new Error('Sessão expirada')
+            }
+            // Tentar novamente após renovar sessão
+            console.log('Sessão renovada, tentando novamente...')
+            // Não tentar automaticamente, deixar o usuário tentar novamente
+          } catch (refreshErr) {
+            console.error('Erro ao renovar sessão:', refreshErr)
+            throw new Error('Erro de autenticação. Por favor, faça login novamente.')
+          }
+        }
+        
         throw new Error(errorMessage)
       }
 
@@ -894,6 +949,21 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
   const handleSend = async () => {
     if (!input.trim() || isLoading || isSending) return
     
+    // Verificar e renovar sessão se necessário antes de enviar
+    const sessionValid = await refreshSessionIfNeeded()
+    if (!sessionValid) {
+      showError('Erro de autenticação. Verificando sessão...')
+      // Tentar uma vez mais
+      const retrySession = await refreshSessionIfNeeded()
+      if (!retrySession) {
+        showError('Sua sessão expirou. Redirecionando para login...')
+        setTimeout(() => {
+          window.location.href = '/login'
+        }, 2000)
+        return
+      }
+    }
+    
     setIsSending(true)
 
     const userMessage: Message = {
@@ -954,7 +1024,29 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
       })
 
       if (!response.ok) {
-        throw new Error('Erro ao enviar mensagem')
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData.error || `Erro ${response.status}: ${response.statusText}`
+        
+        // Se for erro de autenticação, tentar renovar sessão
+        if (response.status === 401 || response.status === 403) {
+          try {
+            const { data: { session }, error: refreshError } = await supabase.auth.refreshSession()
+            if (refreshError || !session) {
+              console.error('Erro ao renovar sessão:', refreshError)
+              showError('Sua sessão expirou. Redirecionando para login...')
+              setTimeout(() => {
+                window.location.href = '/login'
+              }, 2000)
+              throw new Error('Sessão expirada')
+            }
+            console.log('Sessão renovada, mas requisição já falhou')
+          } catch (refreshErr) {
+            console.error('Erro ao renovar sessão:', refreshErr)
+            throw new Error('Erro de autenticação. Por favor, faça login novamente.')
+          }
+        }
+        
+        throw new Error(errorMessage)
       }
 
       const data = await response.json()
@@ -1046,21 +1138,32 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
       
       // Mostrar mensagem de erro mais específica
       let errorMessageText = 'Desculpe, tive um problema ao processar sua mensagem. Pode tentar novamente?'
+      let shouldShowErrorToast = true
       
       if (error?.message) {
         // Mensagens de erro mais específicas
         if (error.message.includes('429') || error.message.includes('rate limit') || error.message.includes('Muitas requisições')) {
-          errorMessageText = 'Você está enviando mensagens muito rápido. Aguarde um momento e tente novamente.'
-        } else if (error.message.includes('401') || error.message.includes('403') || error.message.includes('autenticação')) {
-          errorMessageText = 'Erro de autenticação. Por favor, faça login novamente.'
+          errorMessageText = 'Você está enviando mensagens muito rápido. Aguarde alguns segundos e tente novamente.'
+        } else if (error.message.includes('401') || error.message.includes('403') || error.message.includes('autenticação') || error.message.includes('Sessão expirada')) {
+          errorMessageText = 'Sua sessão expirou. Por favor, faça login novamente.'
+          shouldShowErrorToast = false // Já mostrou o erro antes
+        } else if (error.message.includes('Não autenticado')) {
+          errorMessageText = 'Você precisa estar logado para enviar mensagens. Redirecionando para login...'
+          setTimeout(() => {
+            window.location.href = '/login'
+          }, 2000)
         } else if (error.message.includes('configuração') || error.message.includes('API')) {
           errorMessageText = 'Erro de configuração do sistema. Por favor, tente novamente mais tarde.'
-        } else {
+        } else if (error.message.includes('limite') || error.message.includes('limit')) {
           errorMessageText = error.message
+        } else {
+          errorMessageText = error.message.length > 100 ? 'Erro ao processar mensagem. Tente novamente.' : error.message
         }
       }
       
-      showError(error?.message || 'Erro ao enviar mensagem. Tente novamente.')
+      if (shouldShowErrorToast) {
+        showError(error?.message || 'Erro ao enviar mensagem. Tente novamente.')
+      }
       
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
