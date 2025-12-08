@@ -1,6 +1,6 @@
-# Desabafo - Landing Page
+# desabafo.io - Landing Page
 
-Landing page minimalista para o SaaS Desabafo, uma IA terapeuta.
+Landing page minimalista para o SaaS desabafo.io, uma IA terapeuta.
 
 ## Tecnologias
 

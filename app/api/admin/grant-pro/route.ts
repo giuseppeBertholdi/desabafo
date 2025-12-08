@@ -8,7 +8,7 @@ import { createSupabaseAdmin } from '@/lib/supabaseAdmin'
  * Body: { email: string, planType?: 'monthly' | 'yearly' }
  * 
  * Para conceder ao giuseppe.bertholdi@gmail.com:
- * curl -X POST https://desabafo.site/api/admin/grant-pro \
+ * curl -X POST https://desabafo.io/api/admin/grant-pro \
  *   -H "Content-Type: application/json" \
  *   -d '{"email":"giuseppe.bertholdi@gmail.com","planType":"monthly"}'
  */

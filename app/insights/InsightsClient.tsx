@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import Sidebar from '@/components/Sidebar'
 import { useUserPlan } from '@/lib/getUserPlanClient'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
@@ -479,6 +479,180 @@ export default function InsightsClient() {
 
   const radarData = calculateRadar(data?.sentimentDistribution)
 
+  // Componente de Loading Animado
+  const LoadingInsights = () => {
+    const phrases = [
+      'analisando seus sentimentos...',
+      'identificando padrões emocionais...',
+      'processando suas conversas...',
+      'gerando insights personalizados...',
+      'entendendo sua jornada...',
+      'descobrindo temas recorrentes...',
+      'preparando seu resumo...',
+      'conectando os pontos...',
+      'revelando sua evolução...',
+      'organizando suas emoções...',
+    ]
+
+    const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0)
+
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setCurrentPhraseIndex((prev) => (prev + 1) % phrases.length)
+      }, 2500) // Muda a frase a cada 2.5 segundos
+
+      return () => clearInterval(interval)
+    }, [phrases.length])
+
+    return (
+      <div className="relative flex flex-col items-center justify-center min-h-[60vh] py-12 sm:py-16 overflow-hidden">
+        {/* Container principal */}
+        <div className="relative w-full max-w-2xl z-10">
+          {/* Círculo animado de fundo */}
+          <motion.div
+            animate={{
+              scale: [1, 1.1, 1],
+              opacity: [0.3, 0.5, 0.3],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+            className="absolute inset-0 flex items-center justify-center -z-10"
+          >
+            <div className="w-64 h-64 sm:w-80 sm:h-80 rounded-full bg-gradient-to-br from-pink-200/30 via-purple-200/30 to-pink-200/30 dark:from-pink-900/20 dark:via-purple-900/20 dark:to-pink-900/20 blur-3xl" />
+          </motion.div>
+
+          {/* Conteúdo central */}
+          <div className="relative z-10 flex flex-col items-center">
+            {/* Ícone animado */}
+            <motion.div
+              animate={{
+                rotate: [0, 360],
+                scale: [1, 1.1, 1],
+              }}
+              transition={{
+                rotate: {
+                  duration: 8,
+                  repeat: Infinity,
+                  ease: 'linear',
+                },
+                scale: {
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                },
+              }}
+              className="mb-8"
+            >
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-pink-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-pink-200/50 dark:shadow-pink-900/30">
+                <svg
+                  className="w-10 h-10 sm:w-12 sm:h-12 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                  />
+                </svg>
+              </div>
+            </motion.div>
+
+            {/* Frases animadas */}
+            <div className="h-16 sm:h-20 flex items-center justify-center mb-6">
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={currentPhraseIndex}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{
+                    duration: 0.5,
+                    ease: 'easeInOut',
+                  }}
+                  className="text-lg sm:text-xl md:text-2xl font-light text-gray-700 dark:text-gray-300 text-center px-4"
+                >
+                  {phrases[currentPhraseIndex]}
+                </motion.p>
+              </AnimatePresence>
+            </div>
+
+            {/* Barra de progresso animada */}
+            <div className="w-full max-w-md mx-auto">
+              <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <motion.div
+                  animate={{
+                    x: ['-100%', '100%'],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                  }}
+                  className="h-full w-1/3 bg-gradient-to-r from-transparent via-pink-500 to-transparent"
+                />
+              </div>
+            </div>
+
+            {/* Pontos de loading */}
+            <div className="flex items-center gap-2 mt-8">
+              {[0, 1, 2].map((i) => (
+                <motion.div
+                  key={i}
+                  animate={{
+                    scale: [1, 1.3, 1],
+                    opacity: [0.5, 1, 0.5],
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    delay: i * 0.2,
+                    ease: 'easeInOut',
+                  }}
+                  className="w-2 h-2 rounded-full bg-pink-500"
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Elementos decorativos flutuantes */}
+        <div className="absolute inset-0 pointer-events-none z-0">
+          {[...Array(5)].map((_, i) => (
+            <motion.div
+              key={i}
+              animate={{
+                y: [0, -30, 0],
+                x: [0, (i % 2 === 0 ? 1 : -1) * 20, 0],
+                opacity: [0.2, 0.4, 0.2],
+              }}
+              transition={{
+                duration: 3 + i * 0.5,
+                repeat: Infinity,
+                delay: i * 0.5,
+                ease: 'easeInOut',
+              }}
+              className="absolute"
+              style={{
+                left: `${15 + i * 18}%`,
+                top: `${25 + i * 12}%`,
+              }}
+            >
+              <div className="text-2xl sm:text-3xl opacity-30">
+                {['💭', '✨', '🌟', '💫', '🔮'][i]}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 relative transition-colors">
       {/* Logo desabafo no topo */}
@@ -537,11 +711,7 @@ export default function InsightsClient() {
           </motion.div>
 
           {isLoading ? (
-            <div className="space-y-4 sm:space-y-8">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-48 sm:h-64 bg-gray-50 dark:bg-gray-800 rounded-2xl animate-pulse" />
-              ))}
-            </div>
+            <LoadingInsights />
           ) : data ? (
             <div className="space-y-4 sm:space-y-6 md:space-y-8">
               {/* Gráfico radar/teia de sentimentos */}
