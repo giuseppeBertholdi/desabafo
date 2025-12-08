@@ -157,7 +157,7 @@ export default function Sidebar() {
           >
             <div className="p-6">
               <div className="mb-8 mt-2">
-                <h2 className="text-2xl font-light text-gray-900 dark:text-white">desabafo 💭</h2>
+                <h2 className="text-2xl font-light text-gray-900 dark:text-white">desabafo.io 💭</h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-light">navegação</p>
               </div>
 

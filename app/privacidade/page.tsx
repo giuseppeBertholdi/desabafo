@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Política de Privacidade - desabafo',
-  description: 'Política de privacidade do desabafo',
+  title: 'Política de Privacidade - desabafo.io',
+  description: 'Política de privacidade do desabafo.io',
 }
 
 export default function PrivacidadePage() {
@@ -31,7 +31,7 @@ export default function PrivacidadePage() {
               1. introdução
             </h2>
             <p className="leading-relaxed">
-              o desabafo está comprometido em proteger sua privacidade. esta política de privacidade descreve como 
+              o desabafo.io está comprometido em proteger sua privacidade. esta política de privacidade descreve como 
               coletamos, usamos, armazenamos e protegemos suas informações pessoais quando você usa nosso serviço.
             </p>
           </section>
@@ -189,7 +189,7 @@ export default function PrivacidadePage() {
               9. privacidade de menores
             </h2>
             <p className="leading-relaxed">
-              o desabafo não é destinado a menores de 18 anos. não coletamos intencionalmente informações pessoais de menores. 
+              o desabafo.io não é destinado a menores de 18 anos. não coletamos intencionalmente informações pessoais de menores. 
               se tomarmos conhecimento de que coletamos informações de um menor, tomaremos medidas para excluir essas informações 
               imediatamente.
             </p>

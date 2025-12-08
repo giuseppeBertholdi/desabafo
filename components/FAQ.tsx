@@ -8,24 +8,24 @@ export default function FAQ() {
 
   const faqs = [
     {
-      question: 'o desabafo substitui terapia profissional?',
-      answer: 'não. o desabafo não é uma ferramenta médica e não substitui terapia profissional ou tratamento médico. é uma companheira de IA pra autoconhecimento e exploração pessoal. se você estiver enfrentando uma emergência médica ou de saúde mental, procure ajuda profissional imediatamente.',
+      question: 'o desabafo.io substitui terapia profissional?',
+      answer: 'não. o desabafo.io não é uma ferramenta médica e não substitui terapia profissional ou tratamento médico. é uma companheira de IA pra autoconhecimento e exploração pessoal. se você estiver enfrentando uma emergência médica ou de saúde mental, procure ajuda profissional imediatamente.',
     },
     {
       question: 'como funciona a privacidade das minhas conversas?',
       answer: 'todas as suas conversas de texto são criptografadas e armazenadas de forma segura. o chat por voz é totalmente privado e não fica salvo - nada é armazenado. seus dados são privados e não compartilhamos suas informações com terceiros. você pode deletar suas conversas a qualquer momento.',
     },
     {
-      question: 'preciso pagar pra usar o desabafo?',
+      question: 'preciso pagar pra usar o desabafo.io?',
       answer: 'oferecemos um plano gratuito com chat limitado, sem insights e sem modo de voz. pra conversas ilimitadas, chat por voz, insights personalizados e todos os recursos, temos o plano pro. você pode cancelar a qualquer momento.',
     },
     {
       question: 'a IA realmente aprende comigo?',
-      answer: 'sim! o desabafo lembra do que você compartilha ao longo do tempo, ajudando a identificar padrões e temas. quanto mais você conversa, melhor a IA entende suas necessidades e oferece insights mais personalizados.',
+      answer: 'sim! o desabafo.io lembra do que você compartilha ao longo do tempo, ajudando a identificar padrões e temas. quanto mais você conversa, melhor a IA entende suas necessidades e oferece insights mais personalizados.',
     },
     {
-      question: 'posso usar o desabafo em qualquer momento?',
-      answer: 'sim! o desabafo está disponível 24/7. não há horários de funcionamento ou agendamentos necessários. acesse quando precisar, mesmo às 3h da manhã.',
+      question: 'posso usar o desabafo.io em qualquer momento?',
+      answer: 'sim! o desabafo.io está disponível 24/7. não há horários de funcionamento ou agendamentos necessários. acesse quando precisar, mesmo às 3h da manhã.',
     },
     {
       question: 'como cancelo minha assinatura?',
@@ -36,8 +36,8 @@ export default function FAQ() {
       answer: 'o chat por voz (disponível no plano pro) permite que você fale naturalmente com a IA. é totalmente privado - nada fica salvo. perfeito pra desabafar sem precisar escrever. funciona em tempo real, como uma conversa real.',
     },
     {
-      question: 'o desabafo funciona em dispositivos móveis?',
-      answer: 'sim! o desabafo é totalmente responsivo e funciona perfeitamente em smartphones, tablets e computadores. estamos trabalhando em apps nativos pra iOS e Android.',
+      question: 'o desabafo.io funciona em dispositivos móveis?',
+      answer: 'sim! o desabafo.io é totalmente responsivo e funciona perfeitamente em smartphones, tablets e computadores. estamos trabalhando em apps nativos pra iOS e Android.',
     },
     {
       question: 'meus dados são usados pra treinar a IA?',

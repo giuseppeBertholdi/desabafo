@@ -330,7 +330,7 @@ export default function OnboardingClient() {
                   o que você está buscando aqui?
                 </h1>
                 <p className="text-base text-gray-500 font-light">
-                  conte um pouco sobre o que você espera encontrar no desabafo
+                  conte um pouco sobre o que você espera encontrar no desabafo.io
                 </p>
               </div>
 

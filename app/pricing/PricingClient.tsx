@@ -62,7 +62,7 @@ export default function PricingClient({ userPlan = 'free' }: PricingClientProps)
           onClick={() => router.push('/home')}
           className="text-xl sm:text-2xl font-light text-gray-900 dark:text-white tracking-tight hover:text-pink-500 transition-colors cursor-pointer"
         >
-          desabafo
+          desabafo.io
         </button>
       </motion.div>
 
@@ -244,7 +244,7 @@ export default function PricingClient({ userPlan = 'free' }: PricingClientProps)
             className="max-w-xl mx-auto text-center"
           >
             <p className="text-sm text-gray-500 dark:text-gray-400 font-light leading-relaxed mb-2">
-              o desabafo nasceu da minha própria necessidade de ter um espaço seguro para expressar o que sinto, sem julgamentos.
+              o desabafo.io nasceu da minha própria necessidade de ter um espaço seguro para expressar o que sinto, sem julgamentos.
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-400 font-light leading-relaxed mb-2">
               não é terapia, não é coaching. é só um lugar onde você pode desabafar livremente, 24 horas por dia, e ser ouvido de verdade.
@@ -256,7 +256,7 @@ export default function PricingClient({ userPlan = 'free' }: PricingClientProps)
               com amor,
             </p>
             <p className="text-3xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
-              fundador do desabafo
+              fundador do desabafo.io
             </p>
           </motion.div>
         </div>

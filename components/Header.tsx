@@ -29,7 +29,7 @@ export default function Header() {
               whileHover={{ scale: 1.02 }}
               className="text-xl sm:text-2xl font-medium text-gray-900 dark:text-white hover:text-pink-600 transition-colors"
             >
-              desabafo 💭
+              desabafo.io 💭
             </motion.a>
 
             {/* Desktop Navigation */}

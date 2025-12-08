@@ -136,7 +136,7 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
         transition={{ duration: 0.6 }}
         className={`fixed ${plan === 'free' ? 'top-16 sm:top-20' : 'top-6 sm:top-8'} left-16 md:left-6 lg:left-8 z-50`}
       >
-        <h1 className="text-lg sm:text-xl md:text-2xl font-light text-gray-900 dark:text-white tracking-tight">desabafo</h1>
+        <h1 className="text-lg sm:text-xl md:text-2xl font-light text-gray-900 dark:text-white tracking-tight">desabafo.io</h1>
       </motion.div>
 
       {/* Sidebar esquerda com ícones */}
@@ -515,7 +515,7 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
             >
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-3xl font-light text-gray-900 dark:text-white">
-                  como usar o desabafo
+                  como usar o desabafo.io
                 </h2>
                 <button
                   onClick={() => setShowHelp(false)}
@@ -692,7 +692,7 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
                     <h3 className="text-xl font-light text-red-900 dark:text-red-100">modo de emergência</h3>
                   </div>
                   <p className="text-sm text-red-800 dark:text-red-200 font-light leading-relaxed mb-4">
-                    se você expressar pensamentos de auto-lesão ou suicídio, o desabafo detecta automaticamente 
+                    se você expressar pensamentos de auto-lesão ou suicídio, o desabafo.io detecta automaticamente 
                     e oferece ajuda imediata com botões para ligar para o CVV (188) ou SAMU (192).
                   </p>
                   <p className="text-xs text-red-700 dark:text-red-300 font-light">
@@ -770,7 +770,7 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
             >
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-3xl font-light text-gray-900 dark:text-white">
-                  como o desabafo pode melhorar?
+                  como o desabafo.io pode melhorar?
                 </h2>
                 <button
                   onClick={() => {
@@ -787,7 +787,7 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
 
               <div className="mb-6">
                 <p className="text-sm text-gray-600 dark:text-gray-400 font-light mb-4">
-                  sua opinião é muito importante para nós. compartilhe suas ideias, sugestões ou o que você gostaria de ver no desabafo.
+                  sua opinião é muito importante para nós. compartilhe suas ideias, sugestões ou o que você gostaria de ver no desabafo.io.
                 </p>
                 <textarea
                   value={feedbackText}

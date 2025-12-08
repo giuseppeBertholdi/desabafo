@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Termos de Uso - desabafo',
-  description: 'Termos de uso do desabafo',
+  title: 'Termos de Uso - desabafo.io',
+  description: 'Termos de uso do desabafo.io',
 }
 
 export default function TermosPage() {
@@ -31,7 +31,7 @@ export default function TermosPage() {
               1. aceitação dos termos
             </h2>
             <p className="leading-relaxed">
-              ao acessar e usar o desabafo, você concorda em cumprir e estar vinculado a estes termos de uso. 
+              ao acessar e usar o desabafo.io, você concorda em cumprir e estar vinculado a estes termos de uso. 
               se você não concordar com qualquer parte destes termos, não deve usar nosso serviço.
             </p>
           </section>
@@ -41,7 +41,7 @@ export default function TermosPage() {
               2. descrição do serviço
             </h2>
             <p className="leading-relaxed">
-              o desabafo é uma plataforma de conversação com inteligência artificial projetada para oferecer 
+              o desabafo.io é uma plataforma de conversação com inteligência artificial projetada para oferecer 
               um espaço seguro para desabafos e reflexões. não é uma ferramenta médica, psicológica ou terapêutica 
               e não substitui tratamento profissional de saúde mental.
             </p>
@@ -52,7 +52,7 @@ export default function TermosPage() {
               3. uso adequado
             </h2>
             <p className="leading-relaxed mb-3">
-              você concorda em usar o desabafo apenas para fins legais e de acordo com estes termos. você não deve:
+              você concorda em usar o desabafo.io apenas para fins legais e de acordo com estes termos. você não deve:
             </p>
             <ul className="list-disc pl-6 space-y-2">
               <li>usar o serviço para qualquer propósito ilegal ou não autorizado</li>
@@ -82,7 +82,7 @@ export default function TermosPage() {
               5. privacidade e dados
             </h2>
             <p className="leading-relaxed">
-              o uso de seus dados pessoais é regido por nossa política de privacidade. ao usar o desabafo, 
+              o uso de seus dados pessoais é regido por nossa política de privacidade. ao usar o desabafo.io, 
               você concorda com a coleta e uso de informações conforme descrito na política de privacidade.
             </p>
           </section>
@@ -92,7 +92,7 @@ export default function TermosPage() {
               6. planos e pagamentos
             </h2>
             <p className="leading-relaxed mb-3">
-              alguns recursos do desabafo podem estar disponíveis apenas mediante assinatura de planos pagos. 
+              alguns recursos do desabafo.io podem estar disponíveis apenas mediante assinatura de planos pagos. 
               ao assinar um plano pago, você concorda em:
             </p>
             <ul className="list-disc pl-6 space-y-2">
@@ -107,7 +107,7 @@ export default function TermosPage() {
               7. limitação de responsabilidade
             </h2>
             <p className="leading-relaxed">
-              o desabafo é fornecido &quot;como está&quot; e &quot;conforme disponível&quot;. não garantimos que o serviço será 
+              o desabafo.io é fornecido &quot;como está&quot; e &quot;conforme disponível&quot;. não garantimos que o serviço será 
               ininterrupto, seguro ou livre de erros. não nos responsabilizamos por quaisquer danos diretos, 
               indiretos, incidentais ou consequenciais resultantes do uso ou incapacidade de usar o serviço.
             </p>
@@ -118,7 +118,7 @@ export default function TermosPage() {
               8. aviso médico
             </h2>
             <p className="leading-relaxed">
-              o desabafo não é uma ferramenta médica e não se destina a tratar, curar, prevenir ou diagnosticar 
+              o desabafo.io não é uma ferramenta médica e não se destina a tratar, curar, prevenir ou diagnosticar 
               qualquer condição médica ou de saúde mental. não substitui terapia profissional, tratamento médico 
               ou aconselhamento psicológico. se você estiver enfrentando uma emergência médica ou de saúde mental, 
               procure ajuda profissional imediatamente.
@@ -130,8 +130,8 @@ export default function TermosPage() {
               9. propriedade intelectual
             </h2>
             <p className="leading-relaxed">
-              todo o conteúdo do desabafo, incluindo textos, gráficos, logos, ícones e software, é propriedade 
-              do desabafo ou de seus licenciadores e está protegido por leis de direitos autorais e outras leis 
+              todo o conteúdo do desabafo.io, incluindo textos, gráficos, logos, ícones e software, é propriedade 
+              do desabafo.io ou de seus licenciadores e está protegido por leis de direitos autorais e outras leis 
               de propriedade intelectual.
             </p>
           </section>

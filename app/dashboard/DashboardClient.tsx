@@ -30,7 +30,7 @@ export default function DashboardClient({ firstName, userEmail }: DashboardClien
         transition={{ duration: 0.6 }}
         className="absolute top-6 sm:top-8 left-6 sm:left-8 z-50"
       >
-        <h1 className="text-xl sm:text-2xl font-light text-gray-900 tracking-tight">desabafo</h1>
+        <h1 className="text-xl sm:text-2xl font-light text-gray-900 tracking-tight">desabafo.io</h1>
       </motion.div>
 
       {/* Sidebar esquerda com ícones */}

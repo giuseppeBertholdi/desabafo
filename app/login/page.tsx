@@ -33,7 +33,7 @@ export default function Login() {
             className="text-center mb-8"
           >
             <h1 className="text-3xl sm:text-4xl font-normal text-gray-900 dark:text-white mb-3">
-              bem-vindo ao desabafo
+              bem-vindo ao desabafo.io
             </h1>
             <p className="text-gray-600 dark:text-gray-400 font-light">
               entre pra começar sua jornada de autoconhecimento

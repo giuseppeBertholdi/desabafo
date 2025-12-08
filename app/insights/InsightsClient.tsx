@@ -493,7 +493,7 @@ export default function InsightsClient() {
           className="text-base sm:text-xl md:text-2xl font-light text-gray-900 dark:text-white tracking-tight hover:text-pink-500 transition-colors cursor-pointer"
           type="button"
         >
-          desabafo
+          desabafo.io
         </button>
       </motion.div>
 

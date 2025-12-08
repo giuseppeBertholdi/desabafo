@@ -1205,7 +1205,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
           onClick={() => router.push('/home')}
           className="text-base sm:text-lg md:text-xl font-light text-gray-800 dark:text-gray-200 tracking-tight hover:text-pink-600 dark:hover:text-pink-400 transition-colors cursor-pointer"
         >
-          desabafo
+          desabafo.io
         </button>
       </motion.div>
 
