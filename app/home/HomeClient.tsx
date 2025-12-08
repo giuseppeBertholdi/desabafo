@@ -235,7 +235,7 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
                   modo voz
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400 font-light">
-                  {plan === 'pro' ? 'converse por voz' : 'disponível no plano pro'}
+                  {plan === 'pro' ? 'converse com a nossa IA Sofia' : 'disponível no plano pro'}
                 </p>
                 {plan !== 'pro' && (
                   <span className="inline-block mt-2 px-2 py-0.5 bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 rounded-full text-xs font-light">
@@ -398,7 +398,7 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
                 modo voz disponível no plano pro
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400 font-light">
-                converse usando sua voz, de forma natural e intuitiva
+                converse com a nossa IA Sofia usando sua voz, de forma natural e intuitiva
               </p>
             </div>
 
@@ -409,7 +409,7 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300 font-light">
                 <li className="flex items-start gap-2">
                   <span className="text-pink-600 mt-0.5">•</span>
-                  <span>modo voz para conversas mais naturais</span>
+                  <span>modo voz com Sofia para conversas mais naturais</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-pink-600 mt-0.5">•</span>
