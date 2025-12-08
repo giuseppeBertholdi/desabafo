@@ -1334,18 +1334,14 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                       <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 shadow-md shadow-pink-200/30 dark:shadow-pink-900/20" />
                     </div>
                   ) : (
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full flex-shrink-0 overflow-hidden bg-gradient-to-br from-pink-300 to-pink-400 flex items-center justify-center shadow-sm">
-                      {userAvatar && userAvatar.startsWith('initials:') ? (
-                        <span className="text-white font-medium text-[10px] sm:text-xs md:text-sm">
-                          {userAvatar.replace('initials:', '')}
-                        </span>
-                      ) : userAvatar ? (
-                        <img src={userAvatar} alt="Avatar" className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-white font-medium text-[10px] sm:text-xs md:text-sm">
-                          {firstName[0].toUpperCase()}
-                        </span>
-                      )}
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full flex-shrink-0 overflow-hidden bg-gray-300 dark:bg-gray-600 flex items-center justify-center shadow-sm">
+                      <svg 
+                        className="w-full h-full text-gray-500 dark:text-gray-400" 
+                        fill="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                      </svg>
                     </div>
                   )}
                   
