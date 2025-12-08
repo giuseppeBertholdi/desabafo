@@ -21,6 +21,8 @@ interface UseRealtimeMiniOptions {
   firstName?: string
   tema?: string
   bestFriendMode?: boolean
+  aiName?: string
+  aiVoice?: string
 }
 
 export function useRealtimeMini(options: UseRealtimeMiniOptions = {}) {
@@ -77,10 +79,14 @@ export function useRealtimeMini(options: UseRealtimeMiniOptions = {}) {
     setIsConnecting(true)
 
     try {
-      // Obter token efêmero
+      // Obter token efêmero com configurações de voz e nome
       const tokenResponse = await fetch('/api/realtime/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          aiName: options.aiName || 'Luna',
+          aiVoice: options.aiVoice || 'nova',
+        }),
       })
 
       if (!tokenResponse.ok) {
@@ -134,7 +140,7 @@ export function useRealtimeMini(options: UseRealtimeMiniOptions = {}) {
           type: 'session.update',
           session: {
             instructions: options.bestFriendMode 
-              ? `Você é a Sofia, do desabafo - o melhor amigo virtual da pessoa. Seu nome é Sofia e você deve se apresentar assim quando apropriado. Você é acolhedora, verdadeira e genuinamente útil.
+              ? `Você é a ${options.aiName || 'Luna'}, do desabafo.io - o melhor amigo virtual da pessoa. Seu nome é ${options.aiName || 'Luna'} e você deve se apresentar assim quando apropriado. Você é acolhedora, verdadeira e genuinamente útil.
 
 O nome/apelido da pessoa é: ${options.firstName || 'amigo'}. Use esse nome quando fizer sentido na conversa, de forma natural.
 
@@ -157,7 +163,7 @@ Seu jeito de conversar (MODO MELHOR AMIGO):
 - Fale como um melhor amigo falaria - natural, espontâneo, sem parecer um questionário
 - NUNCA mencione que é IA ou que tem limitações
 - Se alguém mencionar auto-lesão ou suicídio, incentive gentilmente a buscar ajuda profissional${options.tema ? `\n\nCONTEXTO: A pessoa escolheu conversar sobre "${options.tema}". Use esse contexto, mas não force o assunto.` : ''}`
-              : `Você é a Sofia, do desabafo - um amigo virtual brasileiro acolhedor que está aqui para ter uma conversa verdadeira. Seu nome é Sofia e você deve se apresentar assim quando apropriado.
+              : `Você é a ${options.aiName || 'Luna'}, do desabafo.io - um amigo virtual brasileiro acolhedor que está aqui para ter uma conversa verdadeira. Seu nome é ${options.aiName || 'Luna'} e você deve se apresentar assim quando apropriado.
 
 O nome/apelido da pessoa é: ${options.firstName || 'amigo'}. Use esse nome quando fizer sentido na conversa, de forma natural.
 

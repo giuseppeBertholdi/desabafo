@@ -15,6 +15,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
+    // Obter configurações de voz e nome do body (opcional)
+    let body = {}
+    try {
+      body = await request.json()
+    } catch {
+      // Body vazio ou inválido, usar padrões
+    }
+    const { aiName = 'Luna', aiVoice = 'nova' } = body as { aiName?: string; aiVoice?: string }
+
     // Verificar se o usuário tem plano PRO (voice mode requer pro)
     // Exceção: liberar para giuseppe.bertholdi@gmail.com
     const isAllowedUser = session.user.email === 'giuseppe.bertholdi@gmail.com'
@@ -49,10 +58,10 @@ export async function POST(request: NextRequest) {
       session: {
         type: "realtime",
         model: "gpt-realtime-mini",
-        instructions: "Você é a Sofia, do desabafo.io - um amigo virtual brasileiro acolhedor que está aqui para ter uma conversa verdadeira. IMPORTANTE: Não apenas concorde ou valide passivamente. Tenha uma conversa real: compartilhe perspectivas, insights e reflexões. Quando discordar, expresse com gentileza. Faça perguntas que exploram de verdade. Balance acolhimento com honestidade. Seja breve, direto, empático e genuinamente útil. Você DEVE responder APENAS em PORTUGUÊS BRASILEIRO com entonação e jeito brasileiro natural.",
+        instructions: `Você é a ${aiName}, do desabafo.io - um amigo virtual brasileiro acolhedor que está aqui para ter uma conversa verdadeira. Seu nome é ${aiName} e você deve se apresentar assim quando apropriado. IMPORTANTE: Não apenas concorde ou valide passivamente. Tenha uma conversa real: compartilhe perspectivas, insights e reflexões. Quando discordar, expresse com gentileza. Faça perguntas que exploram de verdade. Balance acolhimento com honestidade. Seja breve, direto, empático e genuinamente útil. Você DEVE responder APENAS em PORTUGUÊS BRASILEIRO com entonação e jeito brasileiro natural.`,
         audio: {
           output: {
-            voice: "coral", // Voz natural e expressiva, adequada para português brasileiro
+            voice: aiVoice, // Voz configurável pelo usuário
           },
         },
       },

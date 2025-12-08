@@ -465,16 +465,42 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
   const [isPlayingAudio, setIsPlayingAudio] = useState(false)
   const [userAvatar, setUserAvatar] = useState<string | null>(null)
   const [showEmojiAnimation, setShowEmojiAnimation] = useState(false)
+  const [showVoiceSettings, setShowVoiceSettings] = useState(false)
+  
+  // Configurações de voz e nome da IA
+  const [aiName, setAiName] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('aiName') || 'Luna'
+    }
+    return 'Luna'
+  })
+  const [aiVoice, setAiVoice] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('aiVoice') || 'nova'
+    }
+    return 'nova'
+  })
+  
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const mediaStreamRef = useRef<MediaStream | null>(null)
+
+  // Salvar configurações quando mudarem
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('aiName', aiName)
+      localStorage.setItem('aiVoice', aiVoice)
+    }
+  }, [aiName, aiVoice])
 
   // Hook para Realtime Mini (substitui Google Cloud quando voiceMode está ativo)
   const realtimeSession = useRealtimeMini({
     firstName: firstName,
     tema: tema,
     bestFriendMode: bestFriendMode,
+    aiName: aiName,
+    aiVoice: aiVoice,
     onMessage: async (transcription: string) => {
       // Quando receber transcrição do Realtime Mini, adicionar como mensagem do usuário
       // O Realtime Mini já processa e responde em áudio, então não precisamos chamar /api/chat
@@ -1462,7 +1488,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                   className="text-center mb-4"
                 >
                   <h2 className="text-2xl sm:text-3xl font-light text-slate-700 dark:text-slate-200 tracking-wide mb-3">
-                    converse com a nossa IA Sofia
+                    converse com a nossa IA {aiName}
                   </h2>
                   <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 font-light">
                     estou ouvindo, é só desabafar
@@ -1562,15 +1588,34 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                   )}
                 </div>
 
-                {/* Botão discreto para alternar para modo texto */}
-                <motion.button
-                  onClick={() => setVoiceMode(false)}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="text-sm text-gray-400 dark:text-gray-500 hover:text-pink-500 dark:hover:text-pink-400 transition-colors cursor-pointer font-light mt-4"
-                >
-                  ou escreva aqui
-                </motion.button>
+                {/* Botões de ação */}
+                <div className="flex items-center gap-4 mt-4">
+                  {/* Botão de configurações */}
+                  <motion.button
+                    onClick={() => setShowVoiceSettings(true)}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="text-sm text-gray-400 dark:text-gray-500 hover:text-pink-500 dark:hover:text-pink-400 transition-colors cursor-pointer font-light flex items-center gap-1.5"
+                    type="button"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    configurações
+                  </motion.button>
+                  
+                  {/* Botão para alternar para modo texto */}
+                  <motion.button
+                    onClick={() => setVoiceMode(false)}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="text-sm text-gray-400 dark:text-gray-500 hover:text-pink-500 dark:hover:text-pink-400 transition-colors cursor-pointer font-light"
+                    type="button"
+                  >
+                    ou escreva aqui
+                  </motion.button>
+                </div>
               </div>
             ) : (
               /* Modo Texto - Estilo Calm com textarea expansível */
@@ -1667,6 +1712,120 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
         )}
       </AnimatePresence>
 
+      {/* Modal de Configurações de Voz */}
+      <AnimatePresence>
+        {showVoiceSettings && (
+          <div 
+            className="fixed inset-0 bg-black/20 dark:bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowVoiceSettings(false)
+              }
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white dark:bg-gray-800 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl transition-colors"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl sm:text-3xl font-light text-gray-900 dark:text-white">
+                  configurações de voz
+                </h2>
+                <button
+                  onClick={() => setShowVoiceSettings(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                  type="button"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Nome da IA */}
+                <div>
+                  <label className="block text-sm font-light text-gray-700 dark:text-gray-300 mb-2">
+                    nome da IA
+                  </label>
+                  <input
+                    type="text"
+                    value={aiName}
+                    onChange={(e) => setAiName(e.target.value)}
+                    placeholder="Luna"
+                    maxLength={20}
+                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white bg-white dark:bg-gray-800 font-light focus:outline-none focus:border-pink-500 transition-colors"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 font-light">
+                    escolha o nome da sua IA terapeuta
+                  </p>
+                </div>
+
+                {/* Voz da IA */}
+                <div>
+                  <label className="block text-sm font-light text-gray-700 dark:text-gray-300 mb-2">
+                    voz da IA
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { value: 'alloy', label: 'Alloy', desc: 'Neutra e clara' },
+                      { value: 'echo', label: 'Echo', desc: 'Masculina' },
+                      { value: 'fable', label: 'Fable', desc: 'Expressiva' },
+                      { value: 'onyx', label: 'Onyx', desc: 'Profunda' },
+                      { value: 'nova', label: 'Nova', desc: 'Feminina' },
+                      { value: 'shimmer', label: 'Shimmer', desc: 'Suave' },
+                    ].map((voice) => (
+                      <motion.button
+                        key={voice.value}
+                        onClick={() => setAiVoice(voice.value)}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className={`p-3 rounded-xl border-2 transition-all text-left ${
+                          aiVoice === voice.value
+                            ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20'
+                            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                        }`}
+                        type="button"
+                      >
+                        <div className="font-medium text-sm text-gray-900 dark:text-white mb-0.5">
+                          {voice.label}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 font-light">
+                          {voice.desc}
+                        </div>
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Botões */}
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setShowVoiceSettings(false)}
+                    className="flex-1 py-3 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-light hover:bg-gray-50 dark:hover:bg-gray-700 transition-all cursor-pointer"
+                    type="button"
+                  >
+                    cancelar
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowVoiceSettings(false)
+                      showSuccess('Configurações salvas!')
+                    }}
+                    className="flex-1 py-3 bg-pink-600 text-white rounded-xl font-light hover:bg-pink-700 transition-all cursor-pointer"
+                    type="button"
+                  >
+                    salvar
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
     </div>
   )
