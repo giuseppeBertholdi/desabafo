@@ -486,11 +486,12 @@ export default function InsightsClient() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="absolute top-6 sm:top-8 left-6 sm:left-8 z-50"
+        className="fixed top-6 sm:top-8 left-16 md:left-6 lg:left-8 z-50"
       >
         <button
           onClick={() => router.push('/home')}
-          className="text-xl sm:text-2xl font-light text-gray-900 dark:text-white tracking-tight hover:text-pink-500 transition-colors cursor-pointer"
+          className="text-base sm:text-xl md:text-2xl font-light text-gray-900 dark:text-white tracking-tight hover:text-pink-500 transition-colors cursor-pointer"
+          type="button"
         >
           desabafo
         </button>
@@ -500,19 +501,19 @@ export default function InsightsClient() {
       <Sidebar />
 
       {/* Conteúdo */}
-      <div className="flex items-center justify-center min-h-screen px-6 sm:px-8 py-20">
+      <div className="flex items-center justify-center min-h-screen px-4 sm:px-6 md:px-8 py-20 md:py-24">
         <div className="max-w-4xl w-full">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="mb-12"
+            className="mb-8 sm:mb-12"
           >
-            <h1 className="text-4xl sm:text-5xl font-light text-gray-900 dark:text-white mb-4">insights</h1>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-light text-gray-900 dark:text-white mb-3 sm:mb-4">insights</h1>
             
             {/* Filtros de período */}
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-1.5 sm:gap-2 flex-wrap">
               {[
                 { value: '7d', label: '7 dias' },
                 { value: '15d', label: '15 dias' },
@@ -522,7 +523,7 @@ export default function InsightsClient() {
                 <button
                   key={p.value}
                   onClick={() => handlePeriodChange(p.value as any)}
-                  className={`px-4 py-2 rounded-full text-sm font-light transition-all cursor-pointer ${
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-light transition-all cursor-pointer ${
                     period === p.value
                       ? 'bg-pink-400 text-white'
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -536,27 +537,33 @@ export default function InsightsClient() {
           </motion.div>
 
           {isLoading ? (
-            <div className="space-y-8">
+            <div className="space-y-4 sm:space-y-8">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-64 bg-gray-50 dark:bg-gray-800 rounded-2xl animate-pulse" />
+                <div key={i} className="h-48 sm:h-64 bg-gray-50 dark:bg-gray-800 rounded-2xl animate-pulse" />
               ))}
             </div>
           ) : data ? (
-            <div className="space-y-8">
+            <div className="space-y-4 sm:space-y-6 md:space-y-8">
               {/* Gráfico radar/teia de sentimentos */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-8"
+                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 sm:p-6 md:p-8"
               >
-                <h2 className="text-xl font-light text-gray-900 dark:text-white mb-6">
+                <h2 className="text-lg sm:text-xl font-light text-gray-900 dark:text-white mb-4 sm:mb-6">
                   como você se sentiu
                 </h2>
-                <div className="flex items-center justify-center gap-12 flex-wrap">
-                  <div className="relative">
+                <div className="flex flex-col md:flex-row items-center justify-center gap-6 sm:gap-8 md:gap-12">
+                  <div className="relative w-full max-w-sm">
                     {radarData && (
-                      <svg width="400" height="400" viewBox="0 0 300 300" className="overflow-visible">
+                      <svg 
+                        width="100%" 
+                        height="auto" 
+                        viewBox="0 0 300 300" 
+                        className="overflow-visible"
+                        preserveAspectRatio="xMidYMid meet"
+                      >
                         <defs>
                           <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
                             <stop offset="0%" stopColor="#ec4899" stopOpacity="0.4" />
@@ -646,18 +653,18 @@ export default function InsightsClient() {
                       </svg>
                     )}
                   </div>
-                  <div className="space-y-3 min-w-[150px]">
+                  <div className="w-full md:w-auto space-y-2 sm:space-y-3 md:min-w-[150px]">
                     {radarData?.points.map((point) => (
-                      <div key={point.axis} className="flex items-center gap-3">
+                      <div key={point.axis} className="flex items-center gap-2 sm:gap-3">
                         <div
-                          className="w-4 h-4 rounded-full"
+                          className="w-3 h-3 sm:w-4 sm:h-4 rounded-full flex-shrink-0"
                           style={{ backgroundColor: sentimentColors[point.axis] || '#6b7280' }}
                         />
-                        <div className="flex-1">
-                          <div className="text-sm font-light text-gray-900 dark:text-gray-100">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs sm:text-sm font-light text-gray-900 dark:text-gray-100">
                             {sentimentLabels[point.axis] || point.axis}
                           </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
                             {point.value}%
                           </div>
                         </div>
@@ -672,29 +679,29 @@ export default function InsightsClient() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.3 }}
-                className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+                className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4"
               >
-                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6">
-                  <div className="text-3xl font-light text-gray-900 dark:text-white mb-1">
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 sm:p-6">
+                  <div className="text-2xl sm:text-3xl font-light text-gray-900 dark:text-white mb-1">
                     {data.totalMessages}
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400 font-light">
+                  <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-light">
                     mensagens enviadas
                   </div>
                 </div>
-                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6">
-                  <div className="text-3xl font-light text-gray-900 dark:text-white mb-1">
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 sm:p-6">
+                  <div className="text-2xl sm:text-3xl font-light text-gray-900 dark:text-white mb-1">
                     {data.totalSessions}
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400 font-light">
+                  <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-light">
                     conversas iniciadas
                   </div>
                 </div>
-                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6">
-                  <div className="text-3xl font-light text-gray-900 dark:text-white mb-1">
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 sm:p-6">
+                  <div className="text-2xl sm:text-3xl font-light text-gray-900 dark:text-white mb-1">
                     {data.avgMessagesPerSession}
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400 font-light">
+                  <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-light">
                     média por conversa
                   </div>
                 </div>

@@ -134,33 +134,37 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className={`absolute ${plan === 'free' ? 'top-16 sm:top-20' : 'top-6 sm:top-8'} left-6 sm:left-8 z-50`}
+        className={`fixed ${plan === 'free' ? 'top-16 sm:top-20' : 'top-6 sm:top-8'} left-16 md:left-6 lg:left-8 z-50`}
       >
-        <h1 className="text-xl sm:text-2xl font-light text-gray-900 dark:text-white tracking-tight">desabafo</h1>
+        <h1 className="text-lg sm:text-xl md:text-2xl font-light text-gray-900 dark:text-white tracking-tight">desabafo</h1>
       </motion.div>
 
       {/* Sidebar esquerda com ícones */}
       <Sidebar />
 
       {/* Switch Modo Melhor Amigo no canto superior direito */}
-      <div className={`absolute ${plan === 'free' ? 'top-14 sm:top-18' : 'top-5 sm:top-6'} right-4 sm:right-6 flex items-center gap-2.5 z-50`}>
+      <div className={`fixed ${plan === 'free' ? 'top-14 sm:top-18' : 'top-5 sm:top-6'} right-4 sm:right-6 z-50`}>
         {/* Modo Melhor Amigo */}
-        <div className="flex items-center gap-2.5 px-3.5 py-1.5 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm">
-          <span className="text-xs text-gray-600 dark:text-gray-400 font-light">melhor amigo</span>
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex items-center gap-2 sm:gap-2.5 px-2.5 sm:px-3.5 py-1.5 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm"
+        >
+          <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 font-light whitespace-nowrap">melhor amigo</span>
           <button
             onClick={handleToggleBestFriend}
-            className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer pointer-events-auto ${
+            className={`relative w-9 sm:w-10 h-5 rounded-full transition-colors cursor-pointer pointer-events-auto ${
               bestFriendMode ? 'bg-pink-500' : 'bg-gray-300 dark:bg-gray-600'
             }`}
             type="button"
           >
             <div
               className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${
-                bestFriendMode ? 'translate-x-5' : 'translate-x-0'
+                bestFriendMode ? 'translate-x-4 sm:translate-x-5' : 'translate-x-0'
               }`}
             />
           </button>
-        </div>
+        </motion.div>
       </div>
 
       {/* Conteúdo central */}

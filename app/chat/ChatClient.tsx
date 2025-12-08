@@ -1199,11 +1199,11 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="absolute top-5 sm:top-6 left-4 sm:left-6 z-10"
+        className="fixed top-5 sm:top-6 left-16 md:left-4 lg:left-6 z-10"
       >
         <button
           onClick={() => router.push('/home')}
-          className="text-lg sm:text-xl font-light text-gray-800 dark:text-gray-200 tracking-tight hover:text-pink-600 dark:hover:text-pink-400 transition-colors cursor-pointer"
+          className="text-base sm:text-lg md:text-xl font-light text-gray-800 dark:text-gray-200 tracking-tight hover:text-pink-600 dark:hover:text-pink-400 transition-colors cursor-pointer"
         >
           desabafo
         </button>
@@ -1217,21 +1217,25 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="absolute top-5 sm:top-6 left-1/2 -translate-x-1/2 z-10"
+          className="fixed top-20 md:top-5 lg:top-6 left-1/2 -translate-x-1/2 z-10"
         >
-          <div className="flex items-center gap-2 px-3.5 py-1.5 bg-pink-50 dark:bg-pink-900/20 rounded-full border border-pink-200 dark:border-pink-800 shadow-sm">
-            <span className="text-base">{temaInfo.emoji}</span>
-            <span className="text-xs sm:text-sm font-light text-pink-800 dark:text-pink-300">{temaInfo.nome}</span>
+          <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 sm:py-1.5 bg-pink-50 dark:bg-pink-900/20 rounded-full border border-pink-200 dark:border-pink-800 shadow-sm">
+            <span className="text-sm sm:text-base">{temaInfo.emoji}</span>
+            <span className="text-[10px] sm:text-xs md:text-sm font-light text-pink-800 dark:text-pink-300">{temaInfo.nome}</span>
           </div>
         </motion.div>
       )}
 
       {/* Switches no canto superior direito - Ocultar no modo voz */}
       {!voiceMode && (
-        <div className="absolute top-20 sm:top-24 right-4 sm:right-6 flex flex-col items-end gap-2.5 z-10">
+        <div className="fixed top-20 sm:top-20 md:top-24 right-2 sm:right-4 md:right-6 flex flex-col items-end gap-1.5 sm:gap-2.5 z-10">
           {/* Modo Melhor Amigo */}
-          <div className="flex items-center gap-2.5 px-3.5 py-1.5 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm">
-            <span className="text-xs text-gray-600 dark:text-gray-400 font-light">melhor amigo</span>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex items-center gap-1.5 sm:gap-2.5 px-2 sm:px-3.5 py-1 sm:py-1.5 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm"
+          >
+            <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 font-light whitespace-nowrap">melhor amigo</span>
             <button
               onClick={() => {
                 const newMode = !bestFriendMode
@@ -1243,21 +1247,27 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                   }, 2000)
                 }
               }}
-              className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer ${
+              className={`relative w-8 sm:w-10 h-4 sm:h-5 rounded-full transition-colors cursor-pointer ${
                 bestFriendMode ? 'bg-pink-500' : 'bg-gray-300 dark:bg-gray-600'
               }`}
+              type="button"
             >
               <div
-                className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${
-                  bestFriendMode ? 'translate-x-5' : 'translate-x-0'
+                className={`absolute top-0.5 left-0.5 w-3 sm:w-4 h-3 sm:h-4 bg-white rounded-full transition-transform shadow-sm ${
+                  bestFriendMode ? 'translate-x-4 sm:translate-x-5' : 'translate-x-0'
                 }`}
               />
             </button>
-          </div>
+          </motion.div>
           
           {/* Chat Temporário */}
-          <div className="flex items-center gap-2.5 px-3.5 py-1.5 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm">
-            <span className="text-xs text-gray-600 dark:text-gray-400 font-light">temporário</span>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.05 }}
+            className="flex items-center gap-1.5 sm:gap-2.5 px-2 sm:px-3.5 py-1 sm:py-1.5 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm"
+          >
+            <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 font-light whitespace-nowrap">temporário</span>
             <button
               onClick={() => {
                 const newTemporary = !temporaryChat
@@ -1267,17 +1277,18 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                   setSessionId(null)
                 }
               }}
-              className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer ${
+              className={`relative w-8 sm:w-10 h-4 sm:h-5 rounded-full transition-colors cursor-pointer ${
                 temporaryChat ? 'bg-pink-500' : 'bg-gray-300 dark:bg-gray-600'
               }`}
+              type="button"
             >
               <div
-                className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${
-                  temporaryChat ? 'translate-x-5' : 'translate-x-0'
+                className={`absolute top-0.5 left-0.5 w-3 sm:w-4 h-3 sm:h-4 bg-white rounded-full transition-transform shadow-sm ${
+                  temporaryChat ? 'translate-x-4 sm:translate-x-5' : 'translate-x-0'
                 }`}
               />
             </button>
-          </div>
+          </motion.div>
 
           {/* Botão para terminar conversa temporária (só aparece se estiver ativo) */}
           {temporaryChat && messages.length > 1 && (
@@ -1285,23 +1296,23 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               onClick={handleEndTemporaryChat}
-              className="mt-1 px-3.5 py-1.5 text-xs text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-full font-light hover:bg-red-50 dark:hover:bg-red-900/20 transition-all cursor-pointer shadow-sm"
+              className="mt-1 px-2 sm:px-3.5 py-1 sm:py-1.5 text-[10px] sm:text-xs text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-full font-light hover:bg-red-50 dark:hover:bg-red-900/20 transition-all cursor-pointer shadow-sm whitespace-nowrap"
               type="button"
             >
-              terminar conversa
+              terminar
             </motion.button>
           )}
         </div>
       )}
 
       {/* Chat Container - Estilo Calm */}
-      <div className="flex items-end justify-center min-h-screen px-4 sm:px-6 pb-24 sm:pb-32 bg-gradient-to-b from-transparent via-slate-50/30 to-slate-50/50 dark:via-slate-900/20 dark:to-slate-900/40">
+      <div className="flex items-end justify-center min-h-screen px-3 sm:px-4 md:px-6 pb-20 sm:pb-24 md:pb-32 bg-gradient-to-b from-transparent via-slate-50/30 to-slate-50/50 dark:via-slate-900/20 dark:to-slate-900/40">
         <div className="w-full max-w-2xl">
           
           {/* Messages - Estilo Calm com mais espaçamento */}
           {/* Ocultar mensagens no modo voz */}
           {!voiceMode && (
-            <div className="space-y-6 mb-10 pt-20 sm:pt-24">
+            <div className="space-y-4 sm:space-y-6 mb-6 sm:mb-10 pt-32 sm:pt-28 md:pt-24">
               <AnimatePresence>
                 {messages.map((message) => (
                   <motion.div
@@ -1315,23 +1326,23 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                     stiffness: 300,
                     damping: 25
                   }}
-                  className={`flex items-start gap-3 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+                  className={`flex items-start gap-2 sm:gap-3 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
                 >
                   {/* Avatar - Cores mais escuras */}
                   {message.role === 'assistant' ? (
-                    <div className="w-10 h-10 sm:w-11 sm:h-11 flex-shrink-0 flex items-center justify-center">
-                      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 shadow-md shadow-pink-200/30 dark:shadow-pink-900/20" />
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 flex-shrink-0 flex items-center justify-center">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 shadow-md shadow-pink-200/30 dark:shadow-pink-900/20" />
                     </div>
                   ) : (
-                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex-shrink-0 overflow-hidden bg-gradient-to-br from-pink-300 to-pink-400 flex items-center justify-center shadow-sm">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full flex-shrink-0 overflow-hidden bg-gradient-to-br from-pink-300 to-pink-400 flex items-center justify-center shadow-sm">
                       {userAvatar && userAvatar.startsWith('initials:') ? (
-                        <span className="text-white font-medium text-xs sm:text-sm">
+                        <span className="text-white font-medium text-[10px] sm:text-xs md:text-sm">
                           {userAvatar.replace('initials:', '')}
                         </span>
                       ) : userAvatar ? (
                         <img src={userAvatar} alt="Avatar" className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-white font-medium text-xs sm:text-sm">
+                        <span className="text-white font-medium text-[10px] sm:text-xs md:text-sm">
                           {firstName[0].toUpperCase()}
                         </span>
                       )}
@@ -1403,9 +1414,9 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.4 }}
-                className="flex items-start gap-3"
+                className="flex items-start gap-2 sm:gap-3"
               >
-                <div className="w-10 h-10 sm:w-11 sm:h-11 flex-shrink-0 flex items-center justify-center">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 flex-shrink-0 flex items-center justify-center">
                   <motion.div
                     animate={{ 
                       rotate: 360
@@ -1415,7 +1426,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                       repeat: Infinity,
                       ease: "linear"
                     }}
-                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-pink-400 to-pink-600"
+                    className="w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full bg-gradient-to-br from-pink-400 to-pink-600"
                   />
                 </div>
                 <div className="flex-1 space-y-2">
@@ -1423,13 +1434,13 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                     initial={{ width: 0 }}
                     animate={{ width: '100%' }}
                     transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                    className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"
+                    className="h-3 sm:h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"
                   />
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: '100%' }}
                     transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }}
-                    className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"
+                    className="h-3 sm:h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"
                   />
                 </div>
               </motion.div>
@@ -1561,7 +1572,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
             ) : (
               /* Modo Texto - Estilo Calm com textarea expansível */
               <>
-                <div className="relative bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-full border border-slate-200/60 dark:border-slate-700/60 hover:border-rose-300/60 dark:hover:border-rose-700/60 transition-all shadow-sm min-h-[56px] sm:min-h-[64px] flex items-end" id="chat-input-container">
+                <div className="relative bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-full border border-slate-200/60 dark:border-slate-700/60 hover:border-rose-300/60 dark:hover:border-rose-700/60 transition-all shadow-sm min-h-[48px] sm:min-h-[56px] md:min-h-[64px] flex items-end" id="chat-input-container">
                   {/* Textarea que cresce para cima */}
                   <textarea
                     ref={inputRef}
@@ -1589,7 +1600,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                       overflow: 'hidden',
                       maxHeight: '200px',
                     }}
-                    className="w-full bg-transparent rounded-full py-4 sm:py-5 px-6 sm:px-7 pr-16 sm:pr-20 text-[15px] sm:text-base text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none font-light tracking-wide disabled:opacity-50 disabled:cursor-not-allowed leading-relaxed"
+                    className="w-full bg-transparent rounded-full py-3 sm:py-4 md:py-5 px-4 sm:px-6 md:px-7 pr-14 sm:pr-16 md:pr-20 text-sm sm:text-[15px] md:text-base text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none font-light tracking-wide disabled:opacity-50 disabled:cursor-not-allowed leading-relaxed"
                   />
 
                   {/* Botão enviar - Estilo Calm */}
@@ -1599,9 +1610,10 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                     whileHover={!isLoading && !isSending && input.trim() ? { scale: 1.08 } : {}}
                     whileTap={!isLoading && !isSending && input.trim() ? { scale: 0.92 } : {}}
                     transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-                    className="absolute right-2 sm:right-2.5 bottom-2 sm:bottom-2.5 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 hover:from-pink-500 hover:to-pink-700 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer shadow-sm hover:shadow-md flex-shrink-0"
+                    className="absolute right-1.5 sm:right-2 md:right-2.5 bottom-1.5 sm:bottom-2 md:bottom-2.5 w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 hover:from-pink-500 hover:to-pink-700 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer shadow-sm hover:shadow-md flex-shrink-0"
+                    type="button"
                   >
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
                     </svg>
                   </motion.button>
@@ -1609,10 +1621,11 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
 
                 {/* Botão para alternar para modo voz (apenas Pro) */}
                 {plan === 'pro' && (
-                  <div className="flex justify-center mt-2.5">
+                  <div className="flex justify-center mt-2 sm:mt-2.5">
                     <button
                       onClick={() => setVoiceMode(true)}
-                      className="text-xs text-gray-500 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-400 transition-colors cursor-pointer font-light flex items-center gap-1.5"
+                      className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-400 transition-colors cursor-pointer font-light flex items-center gap-1 sm:gap-1.5"
+                      type="button"
                     >
                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
