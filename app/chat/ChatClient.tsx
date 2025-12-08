@@ -1458,7 +1458,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                   className="text-center mb-4"
                 >
                   <h2 className="text-2xl sm:text-3xl font-light text-slate-700 dark:text-slate-200 tracking-wide mb-3">
-                    converse com a nossa IA Sofia
+                    converse com a nossa IA Luna
                   </h2>
                   <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 font-light">
                     estou ouvindo, é só desabafar
