@@ -726,57 +726,26 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
         )}
       </AnimatePresence>
 
-      {/* Animação de chuva de corações quando ativa modo melhor amigo */}
+      {/* Animação de emoji quando ativa modo melhor amigo */}
       <AnimatePresence>
         {showEmojiAnimation && (
-          <div className="fixed inset-0 z-[100] pointer-events-none overflow-hidden">
-            {Array.from({ length: 80 }).map((_, i) => {
-              // Valores pré-calculados para evitar problemas de hidratação
-              const randomX = (i * 23.7) % 100 // Distribuição por toda a largura
-              const randomY = (i * 31.3) % 100 // Distribuição por toda a altura
-              const randomRotate = (i * 73) % 360
-              const randomDuration = 2.5 + (i % 4) * 0.4
-              const randomDelay = (i % 15) * 0.08
-              const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 1000
-              
-              // Alguns corações caem, outros aparecem em posições fixas e pulsam
-              const isFalling = i % 3 === 0
-              const startY = isFalling ? -50 : randomY
-              const endY = isFalling ? screenHeight + 100 : randomY + (i % 20) - 10
-              const startX = randomX
-              const endX = isFalling ? randomX : randomX + (i % 15) - 7
-              
-              return (
-                <motion.div
-                  key={i}
-                  initial={{ 
-                    opacity: 0, 
-                    scale: 0,
-                    x: `${startX}%`,
-                    y: startY
-                  }}
-                  animate={{ 
-                    opacity: isFalling ? [0, 1, 1, 0] : [0, 1, 1, 1, 0.8, 0],
-                    scale: isFalling ? [0, 1, 1, 0.8] : [0, 1.2, 1, 1.1, 1, 0.9, 0],
-                    y: endY,
-                    rotate: [0, randomRotate, randomRotate + 180, randomRotate + 360],
-                    x: `${endX}%`
-                  }}
-                  exit={{ opacity: 0 }}
-                  transition={{ 
-                    duration: randomDuration,
-                    delay: randomDelay,
-                    ease: isFalling ? "easeIn" : "easeInOut"
-                  }}
-                  className="absolute"
-                >
-                  <div className="text-3xl sm:text-4xl md:text-5xl" style={{ color: '#a855f7' }}>
-                    💜
-                  </div>
-                </motion.div>
-              )
-            })}
-          </div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0, y: 0 }}
+            animate={{ 
+              opacity: [0, 1, 1, 0],
+              scale: [0, 1.2, 1, 0.8],
+              y: [0, -100, -150, -200],
+              rotate: [0, 10, -10, 0]
+            }}
+            exit={{ opacity: 0, scale: 0 }}
+            transition={{ 
+              duration: 2,
+              ease: "easeOut"
+            }}
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100] pointer-events-none"
+          >
+            <div className="text-8xl">💜</div>
+          </motion.div>
         )}
       </AnimatePresence>
 
