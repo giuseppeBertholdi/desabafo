@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import Sidebar from '@/components/Sidebar'
 import ProBanner from '@/components/ProBanner'
 import { useUserPlan } from '@/lib/getUserPlanClient'
@@ -24,6 +24,8 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
   const router = useRouter()
   const supabase = createClientComponentClient()
   const { plan } = useUserPlan()
+  const { scrollY } = useScroll()
+  const backgroundY = useTransform(scrollY, [0, 500], [0, 150])
 
   // Saudações variadas e curtas
   const greetings = [
@@ -125,99 +127,158 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 relative transition-colors">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-gray-900 relative overflow-hidden transition-colors">
+      {/* Background decorativo animado */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div 
+          style={{ y: backgroundY }}
+          className="absolute top-0 -right-1/4 w-96 h-96 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full blur-3xl"
+        />
+        <motion.div 
+          style={{ y: backgroundY }}
+          className="absolute -bottom-48 -left-48 w-96 h-96 bg-gradient-to-tr from-blue-400/20 to-purple-400/20 rounded-full blur-3xl"
+        />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-br from-pink-300/10 to-purple-300/10 rounded-full blur-3xl" />
+      </div>
+
       {/* Banner Experimentar Pro */}
       <ProBanner />
       
-      {/* Logo desabafo no topo */}
+      {/* Logo desabafo no topo com gradiente */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         className={`fixed ${plan === 'free' ? 'top-16 sm:top-20' : 'top-6 sm:top-8'} left-16 md:left-6 lg:left-8 z-50`}
       >
-        <h1 className="text-lg sm:text-xl md:text-2xl font-light text-gray-900 dark:text-white tracking-tight">desabafo.io</h1>
+        <h1 className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 bg-clip-text text-transparent tracking-tight">
+          desabafo.io
+        </h1>
       </motion.div>
 
       {/* Sidebar esquerda com ícones */}
       <Sidebar />
 
-      {/* Switch Modo Melhor Amigo no canto superior direito */}
+      {/* Switch Modo Melhor Amigo no canto superior direito - Redesenhado */}
       <div className={`fixed ${plan === 'free' ? 'top-14 sm:top-18' : 'top-5 sm:top-6'} right-4 sm:right-6 z-50`}>
-        {/* Modo Melhor Amigo */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="flex items-center gap-2 sm:gap-2.5 px-2.5 sm:px-3.5 py-1.5 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm"
+          className="flex items-center gap-2 sm:gap-2.5 px-3 sm:px-4 py-2 bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl border border-purple-200/50 dark:border-purple-700/50 shadow-lg shadow-purple-500/10"
         >
-          <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 font-light whitespace-nowrap">melhor amigo</span>
+          <span className="text-[10px] sm:text-xs text-gray-700 dark:text-gray-300 font-medium whitespace-nowrap">melhor amigo</span>
           <button
             onClick={handleToggleBestFriend}
-            className={`relative w-9 sm:w-10 h-5 rounded-full transition-colors cursor-pointer pointer-events-auto ${
-              bestFriendMode ? 'bg-pink-500' : 'bg-gray-300 dark:bg-gray-600'
+            className={`relative w-11 sm:w-12 h-6 rounded-full transition-all duration-300 cursor-pointer pointer-events-auto ${
+              bestFriendMode 
+                ? 'bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg shadow-pink-500/50' 
+                : 'bg-gray-300 dark:bg-gray-600'
             }`}
             type="button"
           >
-            <div
-              className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${
-                bestFriendMode ? 'translate-x-4 sm:translate-x-5' : 'translate-x-0'
-              }`}
+            <motion.div
+              animate={{ x: bestFriendMode ? 24 : 2 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+              className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-md"
             />
           </button>
         </motion.div>
       </div>
 
       {/* Conteúdo central */}
-      <div className="flex items-center justify-center min-h-screen px-6 sm:px-8 py-20 relative z-0">
-        <div className="max-w-2xl w-full">
+      <div className="flex items-center justify-center min-h-screen px-6 sm:px-8 py-20 relative z-10">
+        <div className="max-w-4xl w-full">
+          {/* Hero Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.8 }}
             className="mb-16 text-center"
           >
-            {/* Saudação */}
-            <h1 
-              className="text-5xl sm:text-6xl lg:text-7xl text-gray-900 dark:text-white font-light tracking-tight mb-3"
-              suppressHydrationWarning
+            {/* Greeting com gradiente e animação */}
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
             >
-              {greeting}
-            </h1>
-            <p className="text-base sm:text-lg font-light text-gray-500 dark:text-gray-400">
+              <h1 
+                className="text-6xl sm:text-7xl lg:text-8xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 bg-clip-text text-transparent tracking-tight mb-4 leading-tight"
+                suppressHydrationWarning
+              >
+                {greeting}
+              </h1>
+            </motion.div>
+            
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 mb-3 font-medium"
+            >
               como você quer conversar hoje?
-            </p>
+            </motion.p>
+            
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-2"
+            >
+              <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              disponível 24/7 • privado e seguro
+            </motion.p>
           </motion.div>
 
-          {/* Cards principais de modo */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            {/* Text Mode - Disponível e DESTAQUE */}
+          {/* Cards principais com glassmorphism */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {/* Text Mode - DESTAQUE com gradiente */}
             <motion.button
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              whileHover={{ scale: 1.01, y: -1 }}
-              whileTap={{ scale: 0.99 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+              whileHover={{ scale: 1.02, y: -4 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => router.push('/chat')}
-              className="border border-gray-200 dark:border-gray-700 rounded-2xl p-12 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-lg transition-all group"
+              className="relative group overflow-hidden rounded-3xl p-1 bg-gradient-to-br from-purple-500 via-pink-500 to-purple-500"
             >
-              <div className="text-center">
-                <div className="text-3xl mb-5">✨</div>
-                <h2 className="text-xl font-light text-gray-900 dark:text-white mb-2">
-                  modo texto
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 font-light">
-                  converse por escrito
-                </p>
+              <div className="relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-[22px] p-10 h-full">
+                {/* Glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[22px]" />
+                
+                <div className="relative text-center">
+                  <motion.div 
+                    className="text-5xl mb-6"
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                  >
+                    ✨
+                  </motion.div>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+                    modo texto
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    converse por escrito de forma natural e acolhedora
+                  </p>
+                  <motion.div
+                    className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-purple-600 dark:text-purple-400"
+                    whileHover={{ x: 5 }}
+                  >
+                    começar agora
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </motion.div>
+                </div>
               </div>
             </motion.button>
 
-            {/* Voice Mode - Disponível apenas no Pro */}
+            {/* Voice Mode com badge PRO */}
             <motion.button
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              whileHover={{ scale: 1.01, y: -1 }}
-              whileTap={{ scale: 0.99 }}
+              transition={{ duration: 0.6, delay: 0.7 }}
+              whileHover={{ scale: 1.02, y: -4 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => {
                 if (plan === 'pro') {
                   router.push('/chat?mode=voice')
@@ -225,252 +286,284 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
                   setShowVoiceUpgrade(true)
                 }
               }}
-              className={`border border-gray-200 dark:border-gray-700 rounded-2xl p-12 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-lg transition-all group ${
-                plan !== 'pro' ? 'opacity-75' : ''
+              className={`relative group overflow-hidden rounded-3xl p-8 bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border-2 border-gray-200/50 dark:border-gray-700/50 hover:border-purple-400/50 dark:hover:border-purple-600/50 shadow-lg hover:shadow-2xl hover:shadow-purple-500/20 transition-all ${
+                plan !== 'pro' ? 'opacity-90' : ''
               }`}
             >
+              {plan !== 'pro' && (
+                <div className="absolute top-4 right-4">
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full text-xs font-bold shadow-lg">
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    PRO
+                  </span>
+                </div>
+              )}
+              
               <div className="text-center">
-                <div className="text-3xl mb-5">🎤</div>
-                <h2 className="text-xl font-light text-gray-900 dark:text-white mb-2">
+                <motion.div 
+                  className="text-5xl mb-6"
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  🎤
+                </motion.div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
                   modo voz
                 </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 font-light">
-                  {plan === 'pro' ? 'converse com a nossa IA Luna' : 'disponível no plano pro'}
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  {plan === 'pro' 
+                    ? 'converse naturalmente com Luna usando sua voz' 
+                    : 'experiência imersiva de conversação por voz'}
                 </p>
                 {plan !== 'pro' && (
-                  <span className="inline-block mt-2 px-2 py-0.5 bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 rounded-full text-xs font-light">
-                    pro
-                  </span>
+                  <motion.div
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-purple-600 dark:text-purple-400"
+                    whileHover={{ x: 5 }}
+                  >
+                    desbloquear
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </motion.div>
                 )}
               </div>
             </motion.button>
           </div>
 
-          {/* Diário */}
+          {/* Diário - Card horizontal com glassmorphism */}
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.35 }}
-            className="mb-20"
+            transition={{ duration: 0.6, delay: 0.8 }}
+            className="mb-12"
           >
             <motion.button
-              whileHover={{ scale: 1.01, y: -1 }}
+              whileHover={{ scale: 1.01, y: -2 }}
               whileTap={{ scale: 0.99 }}
               onClick={() => router.push('/journal')}
-              className="w-full border border-gray-200 dark:border-gray-700 rounded-2xl p-8 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-lg transition-all group"
+              className="w-full group relative overflow-hidden rounded-3xl p-8 bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border-2 border-gray-200/50 dark:border-gray-700/50 hover:border-purple-400/50 dark:hover:border-purple-600/50 shadow-lg hover:shadow-2xl hover:shadow-purple-500/20 transition-all"
             >
-              <div className="flex items-center justify-center gap-4">
-                <div className="text-3xl">📔</div>
-                <div className="text-left">
-                  <h2 className="text-lg font-light text-gray-900 dark:text-white mb-1">
-                    diário
-                  </h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 font-light">
-                    escreva livremente com ajuda da IA
-                  </p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-6">
+                  <div className="text-5xl">📔</div>
+                  <div className="text-left">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                      diário pessoal
+                    </h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      registre seus pensamentos com assistência inteligente da IA
+                    </p>
+                  </div>
                 </div>
+                <motion.div
+                  className="text-purple-600 dark:text-purple-400"
+                  whileHover={{ x: 5 }}
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </motion.div>
               </div>
             </motion.button>
           </motion.div>
 
-          {/* Explorar - Minimalista */}
+          {/* Explorar por tema - Grid moderno */}
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="mb-12"
+            transition={{ duration: 0.6, delay: 0.9 }}
+            className="mb-16"
           >
-            <h3 className="text-sm font-light text-gray-400 dark:text-gray-500 mb-8 text-center">
-              explore por tema
-            </h3>
-            <div className="flex flex-wrap justify-center gap-2">
+            <div className="text-center mb-8">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                explore por tema
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                escolha um tema para iniciar uma conversa direcionada
+              </p>
+            </div>
+            
+            <div className="flex flex-wrap justify-center gap-3">
               {[
-                { emoji: '😰', label: 'ansiedade' },
-                { emoji: '💔', label: 'relacionamento' },
-                { emoji: '💼', label: 'trabalho' },
-                { emoji: '😔', label: 'tristeza' },
-                { emoji: '🤔', label: 'dúvidas' },
-                { emoji: '😊', label: 'conquistas' },
-                { emoji: '😴', label: 'sono' },
-                { emoji: '🎓', label: 'estudos' },
-                { emoji: '👨‍👩‍👧‍👦', label: 'família' },
-                { emoji: '💪', label: 'motivação' },
-                { emoji: '😤', label: 'raiva' },
-                { emoji: '😌', label: 'calma' },
-                { emoji: '🎯', label: 'objetivos' },
-                { emoji: '🤝', label: 'amizade' },
-                { emoji: '🌱', label: 'crescimento' },
-                { emoji: '🌙', label: 'solidão' },
-                { emoji: '😨', label: 'medo' },
-                { emoji: '😓', label: 'estresse' },
-                { emoji: '💎', label: 'autoestima' },
-                { emoji: '🔄', label: 'mudanças' },
-                { emoji: '⚖️', label: 'decisões' },
-                { emoji: '🔮', label: 'futuro' },
-                { emoji: '📜', label: 'passado' },
-                { emoji: '✨', label: 'presente' },
-                { emoji: '🙏', label: 'gratidão' },
-                { emoji: '🌟', label: 'esperança' },
-                { emoji: '😞', label: 'desânimo' },
-                { emoji: '🌀', label: 'confusão' },
-                { emoji: '😄', label: 'alegria' },
-                { emoji: '🏆', label: 'orgulho' },
-                { emoji: '😳', label: 'vergonha' },
-                { emoji: '😟', label: 'insegurança' },
-                { emoji: '🔍', label: 'comparação' },
-                { emoji: '⏰', label: 'procrastinação' },
-                { emoji: '📅', label: 'rotina' },
-                { emoji: '🎨', label: 'criatividade' },
-                { emoji: '💭', label: 'sonhos' },
-                { emoji: '🌍', label: 'realidade' },
-                { emoji: '📊', label: 'expectativas' },
-                { emoji: '🤗', label: 'aceitação' },
-                { emoji: '🦋', label: 'mudança' },
-                { emoji: '🧘', label: 'autocuidado' },
-                { emoji: '🚧', label: 'limites' },
-                { emoji: '💬', label: 'comunicação' },
-                { emoji: '💕', label: 'intimidade' },
-                { emoji: '🕊️', label: 'perdão' },
-                { emoji: '👁️', label: 'ciúmes' },
-                { emoji: '🦅', label: 'independência' },
-                { emoji: '⚖️', label: 'responsabilidade' },
+                { emoji: '😰', label: 'ansiedade', color: 'from-orange-400 to-red-400' },
+                { emoji: '💔', label: 'relacionamento', color: 'from-pink-400 to-rose-400' },
+                { emoji: '💼', label: 'trabalho', color: 'from-blue-400 to-cyan-400' },
+                { emoji: '😔', label: 'tristeza', color: 'from-indigo-400 to-purple-400' },
+                { emoji: '🤔', label: 'dúvidas', color: 'from-yellow-400 to-orange-400' },
+                { emoji: '😊', label: 'conquistas', color: 'from-green-400 to-emerald-400' },
+                { emoji: '😴', label: 'sono', color: 'from-blue-400 to-indigo-400' },
+                { emoji: '🎓', label: 'estudos', color: 'from-purple-400 to-pink-400' },
+                { emoji: '👨‍👩‍👧‍👦', label: 'família', color: 'from-amber-400 to-orange-400' },
+                { emoji: '💪', label: 'motivação', color: 'from-red-400 to-pink-400' },
+                { emoji: '😤', label: 'raiva', color: 'from-red-500 to-orange-500' },
+                { emoji: '😌', label: 'calma', color: 'from-teal-400 to-cyan-400' },
               ].map((tema, i) => (
                 <motion.button
                   key={i}
-                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
                   transition={{ 
-                    duration: 0.3, 
-                    delay: 0.5 + i * 0.03,
+                    duration: 0.4, 
+                    delay: 1 + i * 0.05,
                     type: 'spring',
-                    stiffness: 300,
-                    damping: 20
+                    stiffness: 400,
+                    damping: 25
                   }}
                   whileHover={{ 
-                    scale: 1.08, 
-                    y: -2,
-                    boxShadow: '0 4px 12px rgba(236, 72, 153, 0.15)'
+                    scale: 1.1, 
+                    y: -4,
                   }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => router.push(`/chat?tema=${tema.label}`)}
-                  className="border border-gray-100 dark:border-gray-700 rounded-full px-3 py-1.5 bg-white dark:bg-gray-800 hover:border-pink-300 dark:hover:border-pink-700 hover:bg-pink-50 dark:hover:bg-pink-900/20 transition-all cursor-pointer"
+                  className="group relative overflow-hidden rounded-2xl px-5 py-3 bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border-2 border-gray-200/50 dark:border-gray-700/50 hover:border-transparent shadow-md hover:shadow-xl transition-all cursor-pointer"
                 >
-                  <span className="text-base mr-1.5">{tema.emoji}</span>
-                  <span className="text-xs text-gray-600 dark:text-gray-300 font-light">{tema.label}</span>
+                  <div className={`absolute inset-0 bg-gradient-to-r ${tema.color} opacity-0 group-hover:opacity-20 transition-opacity`} />
+                  <div className="relative flex items-center gap-2">
+                    <span className="text-xl">{tema.emoji}</span>
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{tema.label}</span>
+                  </div>
                 </motion.button>
               ))}
             </div>
           </motion.div>
 
-          {/* Info do usuário */}
+          {/* Features/Benefits Section */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.7 }}
-            className="text-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 1.2 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
           >
-            <p className="text-xs text-gray-400 dark:text-gray-500 font-light">
-              disponível 24/7 • privado e seguro
-            </p>
+            {[
+              { icon: '🔒', title: 'totalmente privado', desc: 'suas conversas são criptografadas e seguras' },
+              { icon: '🧠', title: 'IA empática', desc: 'respostas personalizadas e acolhedoras' },
+              { icon: '📊', title: 'insights profundos', desc: 'entenda melhor seus padrões emocionais' },
+            ].map((feature, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.3 + i * 0.1 }}
+                whileHover={{ y: -4 }}
+                className="text-center p-6 rounded-2xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50"
+              >
+                <div className="text-4xl mb-3">{feature.icon}</div>
+                <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{feature.title}</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{feature.desc}</p>
+              </motion.div>
+            ))}
           </motion.div>
         </div>
       </div>
 
-      {/* Modal de Upgrade para Modo Voz */}
-      {showVoiceUpgrade && (
-        <div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowVoiceUpgrade(false)
-            }
-          }}
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-md w-full shadow-xl transition-colors"
+      {/* Modal de Upgrade para Modo Voz - Redesenhado */}
+      <AnimatePresence>
+        {showVoiceUpgrade && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-md z-[100] flex items-center justify-center p-4"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowVoiceUpgrade(false)
+              }
+            }}
           >
-            <div className="text-center mb-6">
-              <div className="text-4xl mb-4">🎤</div>
-              <h2 className="text-2xl font-light text-gray-900 dark:text-white mb-2">
-                modo voz disponível no plano pro
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 font-light">
-                converse com a nossa IA Luna usando sua voz, de forma natural e intuitiva
-              </p>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="relative bg-white dark:bg-gray-800 rounded-3xl p-8 max-w-lg w-full shadow-2xl border border-purple-200/50 dark:border-purple-700/50 overflow-hidden"
+            >
+              {/* Background gradient */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full blur-3xl -z-10" />
+              
+              <div className="text-center mb-8">
+                <motion.div 
+                  className="text-6xl mb-4"
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  🎤
+                </motion.div>
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
+                  desbloqueie o modo voz
+                </h2>
+                <p className="text-base text-gray-600 dark:text-gray-400">
+                  converse naturalmente com Luna usando sua voz
+                </p>
+              </div>
 
-            <div className="space-y-3 mb-6">
-              <p className="text-sm text-gray-600 dark:text-gray-300 font-light">
-                com o plano pro você tem acesso a:
-              </p>
-              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300 font-light">
-                <li className="flex items-start gap-2">
-                  <span className="text-pink-600 mt-0.5">•</span>
-                  <span>modo voz com Luna para conversas mais naturais</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-pink-600 mt-0.5">•</span>
-                  <span>chat ilimitado</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-pink-600 mt-0.5">•</span>
-                  <span>insights ilimitados</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-pink-600 mt-0.5">•</span>
-                  <span>suporte prioritário</span>
-                </li>
-              </ul>
-            </div>
+              <div className="space-y-4 mb-8">
+                {[
+                  { icon: '🎙️', text: 'conversas por voz ilimitadas com Luna' },
+                  { icon: '💬', text: 'chat ilimitado em modo texto' },
+                  { icon: '💡', text: 'insights e análises profundas' },
+                  { icon: '⚡', text: 'respostas mais rápidas e prioritárias' },
+                ].map((item, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200/50 dark:border-purple-700/50"
+                  >
+                    <span className="text-2xl">{item.icon}</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.text}</span>
+                  </motion.div>
+                ))}
+              </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowVoiceUpgrade(false)}
-                className="flex-1 py-3 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-light hover:bg-gray-50 dark:hover:bg-gray-700 transition-all cursor-pointer pointer-events-auto"
-                type="button"
-              >
-                talvez depois
-              </button>
-              <button
-                onClick={() => {
-                  setShowVoiceUpgrade(false)
-                  router.push('/pricing')
-                }}
-                className="flex-1 py-3 bg-pink-600 text-white rounded-lg font-light hover:bg-pink-700 transition-all cursor-pointer pointer-events-auto"
-                type="button"
-              >
-                ver planos
-              </button>
-            </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowVoiceUpgrade(false)}
+                  className="flex-1 py-4 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-2xl font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all cursor-pointer pointer-events-auto"
+                  type="button"
+                >
+                  talvez depois
+                </button>
+                <button
+                  onClick={() => {
+                    setShowVoiceUpgrade(false)
+                    router.push('/pricing')
+                  }}
+                  className="flex-1 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl font-semibold hover:from-purple-700 hover:to-pink-700 shadow-lg shadow-purple-500/50 transition-all cursor-pointer pointer-events-auto"
+                  type="button"
+                >
+                  ver planos
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
-      {/* Botões de Feedback e Ajuda no canto inferior direito */}
+      {/* Botões de Feedback e Ajuda - Redesenhados */}
       <div className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-50 flex items-center gap-3">
         {/* Botão de Ajuda */}
         <motion.button
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4, delay: 0.8 }}
-          whileHover={{ scale: 1.05 }}
+          whileHover={{ scale: 1.08, y: -2 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setShowHelp(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow-sm hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all cursor-pointer pointer-events-auto"
+          className="flex items-center gap-2.5 px-5 py-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-2 border-purple-200/50 dark:border-purple-700/50 rounded-2xl shadow-lg hover:shadow-xl hover:shadow-purple-500/20 transition-all cursor-pointer pointer-events-auto group"
           type="button"
         >
           <svg 
-            className="w-4 h-4 text-gray-600 dark:text-gray-400" 
+            className="w-5 h-5 text-purple-600 dark:text-purple-400 group-hover:rotate-12 transition-transform" 
             fill="none" 
             stroke="currentColor" 
             viewBox="0 0 24 24"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <span className="text-sm text-gray-700 dark:text-gray-300 font-light">ajuda</span>
+          <span className="text-sm text-gray-800 dark:text-gray-200 font-semibold">ajuda</span>
         </motion.button>
 
         {/* Botão de Feedback */}
@@ -478,20 +571,22 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4, delay: 0.85 }}
-          whileHover={{ scale: 1.05 }}
+          whileHover={{ scale: 1.08, y: -2 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setShowFeedback(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow-sm hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all cursor-pointer pointer-events-auto"
+          className="flex items-center gap-2.5 px-5 py-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl shadow-lg shadow-purple-500/50 hover:shadow-xl hover:shadow-purple-500/60 transition-all cursor-pointer pointer-events-auto group"
           type="button"
         >
-          <svg 
-            className="w-4 h-4 text-pink-600" 
+          <motion.svg 
+            className="w-5 h-5 text-white" 
             fill="currentColor" 
             viewBox="0 0 24 24"
+            animate={{ scale: [1, 1.2, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
           >
             <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-          </svg>
-          <span className="text-sm text-gray-700 dark:text-gray-300 font-light">feedback</span>
+          </motion.svg>
+          <span className="text-sm text-white font-semibold">feedback</span>
         </motion.button>
       </div>
 
@@ -749,11 +844,14 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
         )}
       </AnimatePresence>
 
-      {/* Modal de Feedback */}
+      {/* Modal de Feedback - Redesenhado */}
       <AnimatePresence>
         {showFeedback && (
-          <div 
-            className="fixed inset-0 bg-black/20 dark:bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-md z-[100] flex items-center justify-center p-4"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setShowFeedback(false)
@@ -762,50 +860,58 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
             }}
           >
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ duration: 0.3 }}
-              className="bg-white dark:bg-gray-800 rounded-3xl p-8 max-w-2xl w-full shadow-2xl transition-colors"
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="relative bg-white dark:bg-gray-800 rounded-3xl p-8 max-w-2xl w-full shadow-2xl border border-purple-200/50 dark:border-purple-700/50 overflow-hidden"
             >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-3xl font-light text-gray-900 dark:text-white">
-                  como o desabafo.io pode melhorar?
-                </h2>
+              {/* Background gradient */}
+              <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full blur-3xl -z-10" />
+              
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                    ajude-nos a melhorar
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    sua opinião é muito importante para nós 💜
+                  </p>
+                </div>
                 <button
                   onClick={() => {
                     setShowFeedback(false)
                     setFeedbackText('')
                   }}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors hover:rotate-90 transition-transform"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
 
-              <div className="mb-6">
-                <p className="text-sm text-gray-600 dark:text-gray-400 font-light mb-4">
-                  sua opinião é muito importante para nós. compartilhe suas ideias, sugestões ou o que você gostaria de ver no desabafo.io.
-                </p>
+              <div className="mb-8">
                 <textarea
                   value={feedbackText}
                   onChange={(e) => setFeedbackText(e.target.value)}
-                  placeholder="escreva seu feedback aqui..."
-                  className="w-full h-48 px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-2xl text-gray-900 dark:text-white bg-white dark:bg-gray-800 font-light placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-pink-500 transition-colors resize-none"
+                  placeholder="compartilhe suas ideias, sugestões ou o que você gostaria de ver no desabafo.io..."
+                  className="w-full h-52 px-5 py-4 border-2 border-gray-200 dark:border-gray-700 rounded-2xl text-gray-900 dark:text-white bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm font-normal placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all resize-none"
                   disabled={isSubmittingFeedback}
                 />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-1">
+                  todas as sugestões são lidas e consideradas pela nossa equipe
+                </p>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex gap-4">
                 <button
                   onClick={() => {
                     setShowFeedback(false)
                     setFeedbackText('')
                   }}
                   disabled={isSubmittingFeedback}
-                  className="flex-1 py-3 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-light hover:bg-gray-50 dark:hover:bg-gray-700 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 py-4 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-2xl font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   type="button"
                 >
                   cancelar
@@ -813,14 +919,24 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
                 <button
                   onClick={handleSubmitFeedback}
                   disabled={isSubmittingFeedback || !feedbackText.trim()}
-                  className="flex-1 py-3 bg-pink-600 text-white rounded-xl font-light hover:bg-pink-700 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl font-semibold hover:from-purple-700 hover:to-pink-700 shadow-lg shadow-purple-500/50 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                   type="button"
                 >
-                  {isSubmittingFeedback ? 'enviando...' : 'enviar feedback'}
+                  {isSubmittingFeedback ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      enviando...
+                    </span>
+                  ) : (
+                    'enviar feedback'
+                  )}
                 </button>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
