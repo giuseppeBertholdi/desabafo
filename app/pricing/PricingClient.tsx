@@ -232,7 +232,7 @@ export default function PricingClient({ userPlan = 'free' }: PricingClientProps)
               continuar com plano gratuito
             </button>
             <p className="text-xs text-gray-400 dark:text-gray-500 font-light mt-2">
-              100 mensagens/mês • 10 entradas de diário • 3 insights/mês • sem modo voz
+              chat limitado • sem insights • sem modo de voz
             </p>
           </motion.div>
 
