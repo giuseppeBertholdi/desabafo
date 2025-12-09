@@ -326,7 +326,7 @@ export default function PricingClient({ userPlan = 'free' }: PricingClientProps)
                             />
                           </svg>
                           <span className="text-sm font-medium text-red-700 dark:text-red-400">
-                            mensagens limitadas (120/mês)
+                            mensagens ilimitads
                           </span>
                         </div>
                       </div>

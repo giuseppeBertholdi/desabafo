@@ -265,7 +265,7 @@ export default function Pricing() {
                         />
                       </svg>
                       <span className="text-sm font-medium text-red-700 dark:text-red-400">
-                        mensagens limitadas (120/mês)
+                        mensagens ilimitadas
                       </span>
                     </div>
                   </div>
