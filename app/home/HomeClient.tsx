@@ -554,7 +554,7 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
                     <span className="text-2xl">🎤</span>
                     <h3 className="text-xl font-light text-gray-900 dark:text-white">modo voz</h3>
                     <span className="px-2 py-0.5 bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 rounded-full text-xs font-light">
-                      plano pago
+                      apenas pro
                     </span>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 font-light leading-relaxed mb-3">
@@ -563,7 +563,7 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
                   </p>
                   <div className="bg-pink-50 dark:bg-pink-900/10 border border-pink-200 dark:border-pink-800 rounded-xl p-4 mb-3">
                     <p className="text-xs text-pink-700 dark:text-pink-300 font-light">
-                      <strong>disponível nos planos pagos:</strong> o modo voz está disponível apenas para assinantes dos planos essencial e premium. 
+                      <strong>disponível apenas no plano pro:</strong> o modo voz está disponível exclusivamente para assinantes do plano pro. 
                       <button 
                         onClick={() => {
                           setShowHelp(false)
@@ -670,7 +670,7 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
                     <span className="text-2xl">💡</span>
                     <h3 className="text-xl font-light text-gray-900 dark:text-white">insights</h3>
                     <span className="px-2 py-0.5 bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 rounded-full text-xs font-light">
-                      plano pago
+                      essential e pro
                     </span>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 font-light leading-relaxed mb-3">
@@ -679,7 +679,7 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
                   </p>
                   <div className="bg-pink-50 dark:bg-pink-900/10 border border-pink-200 dark:border-pink-800 rounded-xl p-4">
                     <p className="text-xs text-pink-700 dark:text-pink-300 font-light">
-                      <strong>disponível nos planos pagos:</strong> insights detalhados e análises avançadas estão disponíveis apenas para assinantes dos planos essencial e premium. 
+                      <strong>disponível nos planos essential e pro:</strong> insights detalhados e análises avançadas estão disponíveis apenas para assinantes. 
                       <button 
                         onClick={() => {
                           setShowHelp(false)
@@ -690,6 +690,63 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
                         ver planos
                       </button>
                     </p>
+                  </div>
+                </div>
+
+                {/* Personalização da IA */}
+                <div className="border-b border-gray-100 dark:border-gray-700 pb-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-2xl">🤖</span>
+                    <h3 className="text-xl font-light text-gray-900 dark:text-white">personalização da ia</h3>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 font-light leading-relaxed mb-3">
+                    personalize completamente como a IA conversa com você. ajuste o tom, nível de gírias, 
+                    formalidade e personalidade para criar uma experiência única.
+                  </p>
+                  <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 space-y-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-light">
+                      <strong className="text-gray-700 dark:text-gray-300">nível de gírias:</strong> escolha entre formal, casual ou bem informal.
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-light">
+                      <strong className="text-gray-700 dark:text-gray-300">personalidade:</strong> séria, equilibrada ou brincalhona.
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-light">
+                      <strong className="text-gray-700 dark:text-gray-300">formalidade:</strong> formal, informal ou bem casual.
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-light">
+                      <strong className="text-gray-700 dark:text-gray-300">configure em:</strong> vá em conta → personalização da ia.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Planos */}
+                <div className="border-b border-gray-100 dark:border-gray-700 pb-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-2xl">⭐</span>
+                    <h3 className="text-xl font-light text-gray-900 dark:text-white">planos disponíveis</h3>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">grátis</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 font-light">
+                        120 mensagens por mês • sem insights • sem modo de voz
+                      </p>
+                    </div>
+                    <div className="bg-pink-50 dark:bg-pink-900/10 rounded-xl p-4 border border-pink-200 dark:border-pink-800">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">essential (R$ 19,90/mês)</p>
+                      <p className="text-xs text-pink-700 dark:text-pink-300 font-light">
+                        mensagens ilimitadas • insights ilimitados • sem modo de voz
+                      </p>
+                    </div>
+                    <div className="bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-900/10 dark:to-purple-900/10 rounded-xl p-4 border-2 border-pink-500 dark:border-pink-600">
+                      <div className="flex items-center gap-2 mb-2">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">pro (R$ 29,90/mês)</p>
+                        <span className="px-2 py-0.5 bg-pink-500 text-white rounded-full text-xs">mais popular</span>
+                      </div>
+                      <p className="text-xs text-pink-700 dark:text-pink-300 font-light">
+                        mensagens ilimitadas • insights ilimitados • <strong>chat por voz</strong> • todos os recursos
+                      </p>
+                    </div>
                   </div>
                 </div>
 

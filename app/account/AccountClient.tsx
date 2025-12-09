@@ -310,7 +310,33 @@ export default function AccountClient() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 relative transition-colors">
+    <div className="min-h-screen bg-white dark:bg-gray-900 relative transition-colors overflow-hidden">
+      {/* Decoração SVG - Bola Rosa (topo direito) */}
+      <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 pointer-events-none">
+        <svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="200" cy="200" r="200" fill="url(#gradient-account)" opacity="0.3" />
+          <defs>
+            <radialGradient id="gradient-account" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(200 200) rotate(90) scale(200)">
+              <stop offset="0%" stopColor="#EC4899" />
+              <stop offset="100%" stopColor="#DB2777" stopOpacity="0.2" />
+            </radialGradient>
+          </defs>
+        </svg>
+      </div>
+
+      {/* Decoração SVG - Bola Rosa (esquerda inferior) */}
+      <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 pointer-events-none">
+        <svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="150" cy="150" r="150" fill="url(#gradient2-account)" opacity="0.2" />
+          <defs>
+            <radialGradient id="gradient2-account" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(150 150) rotate(90) scale(150)">
+              <stop offset="0%" stopColor="#F472B6" />
+              <stop offset="100%" stopColor="#EC4899" stopOpacity="0.1" />
+            </radialGradient>
+          </defs>
+        </svg>
+      </div>
+
       {/* Logo desabafo no topo */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -330,7 +356,7 @@ export default function AccountClient() {
       <Sidebar />
 
       {/* Conteúdo central - Minimalista inspirado no calmi */}
-      <div className="flex items-center justify-center min-h-screen px-6 sm:px-8 py-20">
+      <div className="flex items-center justify-center min-h-screen px-6 sm:px-8 py-20 relative z-0">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
