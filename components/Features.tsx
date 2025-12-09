@@ -41,10 +41,16 @@ export default function Features() {
       imageSide: 'right',
     },
     {
+      emoji: '🎵',
+      title: 'conexão com Spotify',
+      description: 'conecte sua conta Spotify e a IA entende melhor sua vibe através das músicas que você está ouvindo. ela usa suas músicas atuais e recentes pra ter um contexto mais rico e empático das suas conversas.',
+      imageSide: 'left',
+    },
+    {
       emoji: '🔒',
       title: '100% privado e seguro',
       description: 'suas conversas são criptografadas e privadas. o chat por voz não fica salvo. você pode deletar tudo a qualquer momento. seus dados são só seus.',
-      imageSide: 'left',
+      imageSide: 'right',
     },
   ]
 

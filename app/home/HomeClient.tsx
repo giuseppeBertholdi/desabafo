@@ -84,21 +84,15 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
         if (data.isPlaying && data.track) {
           setSpotifyTrack(data.track)
           setShowSpotifyWidget(true)
-        } else {
-          // Não está conectado ou não está tocando música
-          // Mostrar popup sugerindo conexão (se não foi dispensado)
-          if (!spotifyPopupDismissed) {
-            setTimeout(() => setShowSpotifyPopup(true), 3000) // Após 3 segundos
-          }
         }
-      } else {
-        // Não está conectado
+      } else if (response.status === 401) {
+        // Não está conectado - mostrar popup sugerindo conexão (se não foi dispensado)
         if (!spotifyPopupDismissed) {
-          setTimeout(() => setShowSpotifyPopup(true), 3000)
+          setTimeout(() => setShowSpotifyPopup(true), 3000) // Após 3 segundos
         }
       }
     } catch (error) {
-      // Não está conectado
+      // Erro ao buscar - mostrar popup se não foi dispensado
       if (!spotifyPopupDismissed) {
         setTimeout(() => setShowSpotifyPopup(true), 3000)
       }

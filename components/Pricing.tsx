@@ -30,6 +30,7 @@ export default function Pricing() {
         '120 mensagens por mês',
         'sem insights',
         'sem modo de voz',
+        'sem Spotify',
       ],
       cta: 'começar grátis',
       popular: false,
@@ -44,6 +45,7 @@ export default function Pricing() {
       features: [
         'mensagens ilimitadas',
         'insights ilimitados',
+        'conexão com Spotify',
         'memória de longo prazo',
         'análise de sentimentos',
         'journal completo',
@@ -65,6 +67,7 @@ export default function Pricing() {
         'mensagens ilimitadas',
         'insights ilimitados',
         'chat por voz (privado)',
+        'conexão com Spotify',
         'memória de longo prazo',
         'análise de sentimentos',
         'journal completo',
