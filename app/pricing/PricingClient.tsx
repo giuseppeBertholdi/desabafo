@@ -241,7 +241,7 @@ export default function PricingClient({ userPlan = 'free' }: PricingClientProps)
                     </motion.div>
                   </div>
 
-                  <ul className="space-y-3 mb-8 flex-grow">
+                  <ul className="space-y-3 mb-6 flex-grow">
                     {plan.features.map((feature, featureIndex) => (
                       <motion.li
                         key={featureIndex}
@@ -267,6 +267,181 @@ export default function PricingClient({ userPlan = 'free' }: PricingClientProps)
                       </motion.li>
                     ))}
                   </ul>
+
+                  {/* Seção "não está incluso" - para Free */}
+                  {plan.id === 'free' && (
+                    <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <h4 className="text-sm font-semibold text-red-700 dark:text-red-400 mb-3">
+                        o que não está incluso:
+                      </h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center">
+                          <svg
+                            className="h-5 w-5 text-red-600 dark:text-red-400 mr-2 flex-shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                          <span className="text-sm font-medium text-red-700 dark:text-red-400">
+                            sem insights
+                          </span>
+                        </div>
+                        <div className="flex items-center">
+                          <svg
+                            className="h-5 w-5 text-red-600 dark:text-red-400 mr-2 flex-shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                          <span className="text-sm font-medium text-red-700 dark:text-red-400">
+                            sem modo de voz
+                          </span>
+                        </div>
+                        <div className="flex items-center">
+                          <svg
+                            className="h-5 w-5 text-red-600 dark:text-red-400 mr-2 flex-shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                          <span className="text-sm font-medium text-red-700 dark:text-red-400">
+                            mensagens limitadas (120/mês)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Seção "não está incluso" - apenas para Essential */}
+                  {plan.id === 'essential' && (
+                    <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <h4 className="text-sm font-semibold text-red-700 dark:text-red-400 mb-2">
+                        o que não está incluso:
+                      </h4>
+                      <div className="flex items-center">
+                        <svg
+                          className="h-5 w-5 text-red-600 dark:text-red-400 mr-2 flex-shrink-0"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                        <span className="text-sm font-medium text-red-700 dark:text-red-400">
+                          não inclui voz
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Seção "está incluso" - para Pro (tudo verde) */}
+                  {plan.id === 'pro' && (
+                    <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border-2 border-green-500 dark:border-green-600 rounded-lg">
+                      <h4 className="text-sm font-semibold text-green-700 dark:text-green-400 mb-3">
+                        o que está incluso:
+                      </h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center">
+                          <svg
+                            className="h-5 w-5 text-green-600 dark:text-green-400 mr-2 flex-shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          <span className="text-sm font-bold text-green-700 dark:text-green-400">
+                            mensagens ilimitadas
+                          </span>
+                        </div>
+                        <div className="flex items-center">
+                          <svg
+                            className="h-5 w-5 text-green-600 dark:text-green-400 mr-2 flex-shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          <span className="text-sm font-bold text-green-700 dark:text-green-400">
+                            insights ilimitados
+                          </span>
+                        </div>
+                        <div className="flex items-center">
+                          <svg
+                            className="h-5 w-5 text-green-600 dark:text-green-400 mr-2 flex-shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          <span className="text-sm font-bold text-green-700 dark:text-green-400">
+                            inclui voz
+                          </span>
+                        </div>
+                        <div className="flex items-center">
+                          <svg
+                            className="h-5 w-5 text-green-600 dark:text-green-400 mr-2 flex-shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          <span className="text-sm font-bold text-green-700 dark:text-green-400">
+                            todos os recursos
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {isCurrentPlan ? (
                     <div className="w-full py-3 border border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 rounded-full font-light text-center cursor-not-allowed">
