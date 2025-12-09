@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
-import { stripe } from '@/lib/stripe'
+import { stripe, getPlanTypeFromPriceId } from '@/lib/stripe'
 import { createSupabaseAdmin } from '@/lib/supabaseAdmin'
 import Stripe from 'stripe'
 
@@ -61,12 +61,17 @@ export async function POST(request: Request) {
           const currentPeriodStart = (subscription as any).current_period_start as number
           const currentPeriodEnd = (subscription as any).current_period_end as number
 
+          // Determinar plan_type baseado no price_id
+          const priceId = (subscription.items.data[0]?.price?.id) || ''
+          const planType = getPlanTypeFromPriceId(priceId)
+
           // Salvar/atualizar assinatura no banco
           const { error } = await supabase.from('user_subscriptions').upsert({
             user_id: userId,
             stripe_subscription_id: subscription.id,
             stripe_customer_id: subscription.customer as string,
             status: subscription.status,
+            plan_type: planType,
             current_period_start: new Date(currentPeriodStart * 1000).toISOString(),
             current_period_end: new Date(currentPeriodEnd * 1000).toISOString(),
             cancel_at_period_end: (subscription as any).cancel_at_period_end,
@@ -123,12 +128,17 @@ export async function POST(request: Request) {
           const currentPeriodStart = (subscription as any).current_period_start as number
           const currentPeriodEnd = (subscription as any).current_period_end as number
 
+          // Determinar plan_type baseado no price_id
+          const priceId = (subscription.items.data[0]?.price?.id) || ''
+          const planType = getPlanTypeFromPriceId(priceId)
+
           // Usar upsert para garantir que cria se não existir
           const { error } = await supabase.from('user_subscriptions').upsert({
             user_id: userId,
             stripe_subscription_id: subscription.id,
             stripe_customer_id: subscription.customer as string,
             status: subscription.status,
+            plan_type: planType,
             current_period_start: new Date(currentPeriodStart * 1000).toISOString(),
             current_period_end: new Date(currentPeriodEnd * 1000).toISOString(),
             cancel_at_period_end: (subscription as any).cancel_at_period_end,
@@ -189,11 +199,16 @@ export async function POST(request: Request) {
           const currentPeriodStart = (subscription as any).current_period_start as number
           const currentPeriodEnd = (subscription as any).current_period_end as number
 
+          // Determinar plan_type baseado no price_id
+          const priceId = (subscription.items.data[0]?.price?.id) || ''
+          const planType = getPlanTypeFromPriceId(priceId)
+
           const { error } = await supabase.from('user_subscriptions').upsert({
             user_id: userId,
             stripe_subscription_id: subscription.id,
             stripe_customer_id: subscription.customer as string,
             status: subscription.status,
+            plan_type: planType,
             current_period_start: new Date(currentPeriodStart * 1000).toISOString(),
             current_period_end: new Date(currentPeriodEnd * 1000).toISOString(),
             cancel_at_period_end: (subscription as any).cancel_at_period_end,

@@ -134,7 +134,7 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className={`fixed ${plan === 'free' ? 'top-16 sm:top-20' : 'top-6 sm:top-8'} left-16 md:left-6 lg:left-8 z-50`}
+        className={`fixed ${plan === 'free' ? 'top-16 sm:top-20' : 'top-6 sm:top-8'} left-16 md:left-6 lg:left-8 z-50 flex items-center`}
       >
         <h1 className="text-lg sm:text-xl md:text-2xl font-light text-gray-900 dark:text-white tracking-tight">desabafo.io</h1>
       </motion.div>
@@ -235,7 +235,7 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
                   modo voz
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400 font-light">
-                  {plan === 'pro' ? 'converse com a nossa IA Luna' : 'disponível no plano pro'}
+                  {plan === 'pro' ? 'converse com a nossa IA Luna' : 'disponível apenas no plano pro'}
                 </p>
                 {plan !== 'pro' && (
                   <span className="inline-block mt-2 px-2 py-0.5 bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 rounded-full text-xs font-light">

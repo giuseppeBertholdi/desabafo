@@ -144,9 +144,9 @@ export default function InsightsClient() {
       // Analisar sentimentos com IA
       const sentimentDistribution = await analyzeSentiments(messages || [])
 
-      // Gerar resumo apenas para usuários PRO
+      // Gerar resumo apenas para usuários Essential e Pro (não free)
       let summary = ''
-      if (plan === 'pro') {
+      if (plan === 'essential' || plan === 'pro') {
         summary = await generateSummary(sessions || [], messages || [], period)
       }
       // Para usuários free, não gerar resumo
@@ -660,7 +660,7 @@ export default function InsightsClient() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="fixed top-6 sm:top-8 left-16 md:left-6 lg:left-8 z-50"
+        className="fixed top-6 sm:top-8 left-16 md:left-6 lg:left-8 z-50 flex items-center"
       >
         <button
           onClick={() => router.push('/home')}
@@ -877,8 +877,8 @@ export default function InsightsClient() {
                 </div>
               </motion.div>
 
-              {/* Resumo - Apenas para PRO */}
-              {plan === 'pro' ? (
+              {/* Resumo - Apenas para Essential e Pro */}
+              {(plan === 'essential' || plan === 'pro') ? (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}

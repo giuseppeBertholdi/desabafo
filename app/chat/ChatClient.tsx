@@ -447,7 +447,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
   })
   const [sessionId, setSessionId] = useState<string | null>(null)
   
-  // Se for plano free, não permitir modo voz
+  // Se for plano free ou essential, não permitir modo voz (apenas pro)
   const [voiceMode, setVoiceMode] = useState(() => {
     // Inicializar baseado no plano, mas precisa verificar depois
     return initialVoiceMode
@@ -455,7 +455,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
   
   // Atualizar voiceMode quando o plano mudar
   useEffect(() => {
-    if (plan === 'free') {
+    if (plan !== 'pro') {
       setVoiceMode(false)
     } else if (plan === 'pro' && initialVoiceMode) {
       setVoiceMode(true)
@@ -716,7 +716,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
     }
   }, [voiceMode, firstName, tema]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Buscar uso de voz quando entrar no modo voz
+  // Buscar uso de voz quando entrar no modo voz (apenas pro)
   useEffect(() => {
     if (voiceMode && plan === 'pro') {
       fetchVoiceUsage()
@@ -775,7 +775,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
   }
 
 
-  // Iniciar gravação (apenas para usuários Pro)
+  // Iniciar gravação (apenas para usuários Pro - essential não tem voz)
   const startRecording = async () => {
     if (plan !== 'pro') {
       return
@@ -1355,7 +1355,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="fixed top-5 sm:top-6 left-16 md:left-4 lg:left-6 z-10"
+        className="fixed top-6 left-16 md:left-4 lg:left-6 z-10 flex items-center"
       >
         <button
           onClick={() => router.push('/home')}
@@ -1604,7 +1604,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
 
           {/* Input Area - Minimalista */}
           <div className="relative">
-            {voiceMode && plan === 'pro' ? (
+            {voiceMode && plan === 'pro' ? ( // Apenas Pro tem acesso a voz
               /* Modo Voz - Estilo Calm */
               <div className="flex flex-col items-center justify-center min-h-[300px] space-y-6">
                 {/* Título centralizado no topo */}
@@ -1816,7 +1816,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                   </motion.button>
                 </div>
 
-                {/* Botão para alternar para modo voz (apenas Pro) */}
+                {/* Botão para alternar para modo voz (apenas Pro - essential não tem voz) */}
                 {plan === 'pro' && (
                   <div className="flex justify-center mt-2 sm:mt-2.5">
                     <button

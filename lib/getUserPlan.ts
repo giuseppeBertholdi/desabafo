@@ -1,7 +1,7 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 
-export type PlanType = 'free' | 'pro'
+export type PlanType = 'free' | 'essential' | 'pro'
 
 export interface UserPlan {
   plan: PlanType
@@ -16,9 +16,9 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
   try {
     const { data: subscription, error } = await supabase
       .from('user_subscriptions')
-      .select('*')
+      .select('plan_type, stripe_subscription_id, status, current_period_end')
       .eq('user_id', userId)
-      .eq('status', 'active')
+      .in('status', ['active', 'trialing'])
       .maybeSingle() // Usar maybeSingle() para não dar erro se não encontrar
 
     // Se houver erro (ex: tabela não existe), retornar free
@@ -28,8 +28,10 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
     }
 
     if (subscription) {
+      // Usar plan_type se disponível, senão assumir 'pro' (compatibilidade)
+      const planType = subscription.plan_type || 'pro'
       return {
-        plan: 'pro',
+        plan: planType === 'essential' ? 'essential' : 'pro',
         subscriptionId: subscription.stripe_subscription_id,
         status: subscription.status,
         currentPeriodEnd: subscription.current_period_end ? new Date(subscription.current_period_end) : undefined
@@ -44,10 +46,22 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
 }
 
 // Helper para verificar se usuário tem acesso a feature
-export function hasFeatureAccess(plan: PlanType, feature: 'voice' | 'unlimited_sessions' | 'unlimited_journal'): boolean {
-  if (plan === 'pro') return true
+export function hasFeatureAccess(plan: PlanType, feature: 'voice' | 'unlimited_sessions' | 'unlimited_journal' | 'insights'): boolean {
+  // Voz apenas para Pro
+  if (feature === 'voice') {
+    return plan === 'pro'
+  }
   
-  // Plano gratuito tem limitações
-  return false // Todas as features premium requerem plano pro
+  // Insights e mensagens ilimitadas para Essential e Pro
+  if (feature === 'insights' || feature === 'unlimited_sessions') {
+    return plan === 'essential' || plan === 'pro'
+  }
+  
+  // Journal ilimitado para Essential e Pro
+  if (feature === 'unlimited_journal') {
+    return plan === 'essential' || plan === 'pro'
+  }
+  
+  return false
 }
 

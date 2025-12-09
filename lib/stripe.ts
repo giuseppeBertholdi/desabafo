@@ -17,8 +17,25 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 
 // Preços dos planos
 export const STRIPE_PRICE_IDS = {
+  // Essential (sem voz)
+  essential_monthly: process.env.STRIPE_PRICE_ID_ESSENTIAL_MONTHLY,
+  essential_yearly: process.env.STRIPE_PRICE_ID_ESSENTIAL_YEARLY,
+  // Pro (com voz)
+  pro_monthly: process.env.STRIPE_PRICE_ID_MONTHLY, // Mantém compatibilidade
+  pro_yearly: process.env.STRIPE_PRICE_ID_YEARLY, // Mantém compatibilidade
+  // Aliases para compatibilidade
   monthly: process.env.STRIPE_PRICE_ID_MONTHLY,
   yearly: process.env.STRIPE_PRICE_ID_YEARLY,
+}
+
+// Mapear price_id para plan_type
+export function getPlanTypeFromPriceId(priceId: string): 'essential' | 'pro' {
+  if (priceId === process.env.STRIPE_PRICE_ID_ESSENTIAL_MONTHLY || 
+      priceId === process.env.STRIPE_PRICE_ID_ESSENTIAL_YEARLY) {
+    return 'essential'
+  }
+  // Qualquer outro price_id é considerado 'pro' (compatibilidade)
+  return 'pro'
 }
 
 // Validar Price IDs em produção

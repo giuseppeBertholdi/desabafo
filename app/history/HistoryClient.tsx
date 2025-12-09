@@ -233,7 +233,7 @@ export default function HistoryClient() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="absolute top-6 sm:top-8 left-6 sm:left-8 z-10"
+        className="absolute top-6 sm:top-8 left-16 sm:left-8 z-10 flex items-center"
       >
         <button
           onClick={() => router.push('/home')}

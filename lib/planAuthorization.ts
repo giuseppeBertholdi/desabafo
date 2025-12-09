@@ -9,7 +9,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
-export type PlanType = 'free' | 'pro'
+export type PlanType = 'free' | 'essential' | 'pro'
 
 export interface PlanValidationResult {
   isAuthorized: boolean
@@ -28,7 +28,7 @@ export async function checkUserPlan(userId: string): Promise<PlanType> {
   try {
     const { data: subscription, error } = await supabase
       .from('user_subscriptions')
-      .select('status')
+      .select('plan_type, status')
       .eq('user_id', userId)
       .in('status', ['active', 'trialing'])
       .maybeSingle() // Usar maybeSingle() em vez de single() para não dar erro se não encontrar
@@ -39,7 +39,13 @@ export async function checkUserPlan(userId: string): Promise<PlanType> {
       return 'free'
     }
 
-    return subscription ? 'pro' : 'free'
+    if (!subscription) {
+      return 'free'
+    }
+
+    // Usar plan_type se disponível, senão assumir 'pro' (compatibilidade)
+    const planType = subscription.plan_type || 'pro'
+    return planType === 'essential' ? 'essential' : 'pro'
   } catch (error) {
     console.warn('Erro ao verificar plano:', error)
     return 'free'
@@ -75,19 +81,31 @@ export async function checkMonthlyLimit(
 ): Promise<PlanValidationResult> {
   const plan = await checkUserPlan(userId)
   
-  // Plano PRO não tem limites
-  if (plan === 'pro') {
-    return {
-      isAuthorized: true,
-      plan,
+  // Plano Essential e Pro não têm limites de mensagens/insights
+  if (plan === 'essential' || plan === 'pro') {
+    if (limitType === 'chat_messages' || limitType === 'insights_generated') {
+      return {
+        isAuthorized: true,
+        plan,
+      }
     }
   }
 
   // Plano FREE tem limites
   const limits = {
-    chat_messages: 120, // 120 mensagens/mês
-    journal_entries: 10, // 10 entradas/mês
-    insights_generated: 3, // 3 insights/mês
+    chat_messages: 120, // 120 mensagens/mês (apenas free)
+    journal_entries: 10, // 10 entradas/mês (apenas free)
+    insights_generated: 3, // 3 insights/mês (apenas free)
+  }
+
+  // Essential e Pro não têm limites de mensagens ou insights
+  if (plan === 'essential' || plan === 'pro') {
+    if (limitType === 'chat_messages' || limitType === 'insights_generated') {
+      return {
+        isAuthorized: true,
+        plan,
+      }
+    }
   }
 
   const limit = limits[limitType]

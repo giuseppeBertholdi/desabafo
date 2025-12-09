@@ -20,17 +20,17 @@ async function handleSummaryRequest(request: NextRequest) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
-    // Verificar se o usuário tem plano PRO
+    // Verificar se o usuário tem plano Essential ou Pro (não free)
     const { data: subscription } = await supabase
       .from('user_subscriptions')
-      .select('status')
+      .select('plan_type, status')
       .eq('user_id', session.user.id)
       .in('status', ['active', 'trialing'])
-      .single()
+      .maybeSingle()
 
     if (!subscription) {
       return NextResponse.json(
-        { error: 'Resumos personalizados disponíveis apenas no plano PRO' },
+        { error: 'Resumos personalizados disponíveis apenas nos planos Essential e Pro' },
         { status: 403 }
       )
     }

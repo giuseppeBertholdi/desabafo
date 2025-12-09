@@ -2,9 +2,22 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 
 export default function Pricing() {
   const [isAnnual, setIsAnnual] = useState(false)
+  const router = useRouter()
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
+
+  const handlePlanClick = (planId: string) => {
+    if (planId === 'free') {
+      router.push('/login')
+      return
+    }
+
+    // Para planos pagos, redirecionar para página de pricing completa
+    router.push('/pricing')
+  }
 
   const plans = [
     {
@@ -14,24 +27,24 @@ export default function Pricing() {
       period: 'sempre',
       description: 'pra experimentar',
       features: [
-        'chat limitado',
+        '120 mensagens por mês',
         'sem insights',
         'sem modo de voz',
       ],
       cta: 'começar grátis',
       popular: false,
+      planId: 'free',
     },
     {
-      emoji: '⭐',
-      name: 'pro',
-      price: isAnnual ? '23' : '29,90',
+      emoji: '💎',
+      name: 'essential',
+      price: isAnnual ? '15' : '19,90',
       period: 'mês',
-      description: 'pra usar no dia a dia',
+      description: 'pra quem quer mais',
       features: [
-        'conversas ilimitadas',
-        'chat por voz (privado)',
+        'mensagens ilimitadas',
+        'insights ilimitados',
         'memória de longo prazo',
-        'insights personalizados',
         'análise de sentimentos',
         'journal completo',
         'temas e contexto',
@@ -40,6 +53,28 @@ export default function Pricing() {
       ],
       cta: 'começar agora',
       popular: true,
+      planId: 'essential',
+    },
+    {
+      emoji: '⭐',
+      name: 'pro',
+      price: isAnnual ? '23' : '29,90',
+      period: 'mês',
+      description: 'completo e com voz',
+      features: [
+        'mensagens ilimitadas',
+        'insights ilimitados',
+        'chat por voz (privado)',
+        'memória de longo prazo',
+        'análise de sentimentos',
+        'journal completo',
+        'temas e contexto',
+        'modo melhor amigo',
+        'histórico completo',
+      ],
+      cta: 'começar agora',
+      popular: false,
+      planId: 'pro',
     },
   ]
 
@@ -99,7 +134,7 @@ export default function Pricing() {
           </motion.div>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-6 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
           {plans.map((plan, index) => (
             <motion.div
               key={index}
@@ -173,15 +208,17 @@ export default function Pricing() {
               </ul>
 
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                onClick={() => handlePlanClick(plan.planId)}
+                disabled={loadingPlan === plan.planId}
+                whileHover={loadingPlan !== plan.planId ? { scale: 1.05 } : {}}
+                whileTap={loadingPlan !== plan.planId ? { scale: 0.95 } : {}}
                 className={`w-full py-3 px-6 rounded-full font-medium transition-colors ${
                   plan.popular
                     ? 'bg-pink-500 text-white hover:bg-pink-600'
                     : 'bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white hover:border-pink-500 dark:hover:border-pink-500 hover:text-pink-600'
-                }`}
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
-                {plan.cta}
+                {loadingPlan === plan.planId ? 'carregando...' : plan.cta}
               </motion.button>
             </motion.div>
           ))}

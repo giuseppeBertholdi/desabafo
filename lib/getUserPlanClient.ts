@@ -3,12 +3,13 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useState, useEffect } from 'react'
 
-export type PlanType = 'free' | 'pro'
+export type PlanType = 'free' | 'essential' | 'pro'
 
 export interface UserPlan {
   plan: PlanType
   subscriptionId?: string
   status?: string
+  planType?: 'essential' | 'pro' // Tipo específico da assinatura (se houver)
 }
 
 export function useUserPlan() {
@@ -31,7 +32,7 @@ export function useUserPlan() {
 
       const { data: subscription, error } = await supabase
         .from('user_subscriptions')
-        .select('*')
+        .select('plan_type, status')
         .eq('user_id', session.user.id)
         .in('status', ['active', 'trialing'])
         .maybeSingle() // Usar maybeSingle() para não dar erro se não encontrar
@@ -41,7 +42,9 @@ export function useUserPlan() {
         console.warn('Erro ao verificar plano:', error.message)
         setPlan('free')
       } else if (subscription) {
-        setPlan('pro')
+        // Usar plan_type se disponível, senão assumir 'pro' (compatibilidade)
+        const planType = subscription.plan_type || 'pro'
+        setPlan(planType === 'essential' ? 'essential' : 'pro')
       } else {
         setPlan('free')
       }

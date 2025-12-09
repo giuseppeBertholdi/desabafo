@@ -28,7 +28,7 @@ export default function DashboardClient({ firstName, userEmail }: DashboardClien
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="absolute top-6 sm:top-8 left-6 sm:left-8 z-50"
+        className="absolute top-6 sm:top-8 left-16 sm:left-8 z-50 flex items-center"
       >
         <h1 className="text-xl sm:text-2xl font-light text-gray-900 tracking-tight">desabafo.io</h1>
       </motion.div>
