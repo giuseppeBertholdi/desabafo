@@ -1198,6 +1198,27 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
       const updatedMessages = [...messages, userMessage, assistantMessage]
       setMessages(updatedMessages)
 
+      // Registrar uso de mensagens (apenas para plano free)
+      if (plan === 'free' && !temporaryChat) {
+        try {
+          const usageResponse = await fetch('/api/messages/usage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ count: 1 })
+          })
+          
+          if (usageResponse.status === 403) {
+            // Limite atingido
+            const limitData = await usageResponse.json()
+            showError(`Você atingiu o limite de ${limitData.maxMessages} mensagens deste mês!`)
+            // Não bloquear a mensagem atual, mas avisar
+          }
+        } catch (error) {
+          console.error('Erro ao registrar uso de mensagens:', error)
+          // Não bloquear o envio se houver erro no registro
+        }
+      }
+
       // Atualizar resumo e tema apenas se NÃO for chat temporário E tiver mais de 5 mensagens E não for emergência
       if (!temporaryChat && currentSessionId) {
         const userMessages = updatedMessages.filter(m => m.role === 'user')

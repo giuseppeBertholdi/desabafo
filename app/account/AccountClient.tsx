@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import Sidebar from '@/components/Sidebar'
 import { useUserPlan } from '@/lib/getUserPlanClient'
+import MessageUsageBar from '@/components/MessageUsageBar'
 
 export default function AccountClient() {
   const [user, setUser] = useState<any>(null)
@@ -19,6 +20,13 @@ export default function AccountClient() {
   const [isSyncingSubscription, setIsSyncingSubscription] = useState(false)
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null)
   const [isLoadingPortal, setIsLoadingPortal] = useState(false)
+  const [messageUsage, setMessageUsage] = useState({
+    messagesSent: 0,
+    maxMessages: 120,
+    percentage: 0,
+    isLimitReached: false
+  })
+  const [isLoadingUsage, setIsLoadingUsage] = useState(true)
   const router = useRouter()
   const supabase = createClientComponentClient()
   const { plan, refreshPlan } = useUserPlan()
@@ -48,7 +56,10 @@ export default function AccountClient() {
   useEffect(() => {
     loadUserData()
     loadSubscriptionStatus()
-  }, [])
+    if (plan === 'free') {
+      loadMessageUsage()
+    }
+  }, [plan])
 
   const loadSubscriptionStatus = async () => {
     const { data: { session } } = await supabase.auth.getSession()
@@ -61,6 +72,26 @@ export default function AccountClient() {
       .single()
 
     setSubscriptionStatus(subscription?.status || null)
+  }
+
+  const loadMessageUsage = async () => {
+    try {
+      setIsLoadingUsage(true)
+      const response = await fetch('/api/messages/usage')
+      if (response.ok) {
+        const data = await response.json()
+        setMessageUsage({
+          messagesSent: data.messagesSent,
+          maxMessages: data.maxMessages,
+          percentage: data.percentage,
+          isLimitReached: data.isLimitReached
+        })
+      }
+    } catch (error) {
+      console.error('Erro ao buscar uso de mensagens:', error)
+    } finally {
+      setIsLoadingUsage(false)
+    }
   }
 
   const handleSyncSubscription = async () => {
@@ -323,6 +354,26 @@ export default function AccountClient() {
 
           {/* Divider sutil */}
           <div className="border-t border-gray-100 dark:border-gray-800 my-12" />
+
+          {/* Uso de Mensagens (apenas plano free) */}
+          {plan === 'free' && !isLoadingUsage && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.25 }}
+              className="mb-12"
+            >
+              <MessageUsageBar
+                messagesSent={messageUsage.messagesSent}
+                maxMessages={messageUsage.maxMessages}
+                percentage={messageUsage.percentage}
+                isLimitReached={messageUsage.isLimitReached}
+              />
+            </motion.div>
+          )}
+
+          {/* Divider sutil */}
+          {plan === 'free' && <div className="border-t border-gray-100 dark:border-gray-800 my-12" />}
 
           {/* Configurações */}
           <div className="space-y-6 mb-12">

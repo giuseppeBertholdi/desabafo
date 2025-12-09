@@ -85,7 +85,7 @@ export async function checkMonthlyLimit(
 
   // Plano FREE tem limites
   const limits = {
-    chat_messages: 100, // 100 mensagens/mês
+    chat_messages: 120, // 120 mensagens/mês
     journal_entries: 10, // 10 entradas/mês
     insights_generated: 3, // 3 insights/mês
   }
@@ -94,21 +94,23 @@ export async function checkMonthlyLimit(
   const supabase = createRouteHandlerClient({ cookies })
   
   try {
-    // Calcular início do mês atual
+    // Calcular mês atual no formato "YYYY-MM"
     const now = new Date()
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
     
     // Contar uso no mês atual baseado no tipo
     let count = 0
     
     if (limitType === 'chat_messages') {
-      const { count: messageCount } = await supabase
-        .from('chat_sessions')
-        .select('*', { count: 'exact', head: true })
+      // Usar a nova tabela message_usage para rastreamento preciso
+      const { data: usageData } = await supabase
+        .from('message_usage')
+        .select('messages_sent')
         .eq('user_id', userId)
-        .gte('created_at', startOfMonth.toISOString())
+        .eq('month_year', monthYear)
+        .single()
       
-      count = messageCount || 0
+      count = usageData?.messages_sent || 0
     } else if (limitType === 'journal_entries') {
       const { count: entryCount } = await supabase
         .from('journal_entries')
