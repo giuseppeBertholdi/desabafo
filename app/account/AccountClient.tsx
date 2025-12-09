@@ -27,6 +27,19 @@ export default function AccountClient() {
     isLimitReached: false
   })
   const [isLoadingUsage, setIsLoadingUsage] = useState(true)
+  
+  // Personalização da IA
+  const [isEditingPersonalization, setIsEditingPersonalization] = useState(false)
+  const [isSavingPersonalization, setIsSavingPersonalization] = useState(false)
+  const [personalization, setPersonalization] = useState({
+    age: '',
+    gender: '',
+    profession: '',
+    slangLevel: 'moderado',
+    playfulness: 'equilibrado',
+    formality: 'informal'
+  })
+  
   const router = useRouter()
   const supabase = createClientComponentClient()
   const { plan, refreshPlan } = useUserPlan()
@@ -56,6 +69,7 @@ export default function AccountClient() {
   useEffect(() => {
     loadUserData()
     loadSubscriptionStatus()
+    loadPersonalization()
     if (plan === 'free') {
       loadMessageUsage()
     }
@@ -148,6 +162,57 @@ export default function AccountClient() {
     if (session?.user) {
       setUser(session.user)
       setEditedName(session.user.user_metadata?.name || session.user.email?.split('@')[0] || '')
+    }
+  }
+
+  const loadPersonalization = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('age, gender, profession, ai_settings')
+        .eq('user_id', session.user.id)
+        .maybeSingle()
+
+      if (profile) {
+        const aiSettings = profile.ai_settings || {}
+        setPersonalization({
+          age: profile.age?.toString() || '',
+          gender: profile.gender || '',
+          profession: profile.profession || '',
+          slangLevel: aiSettings.slang_level || 'moderado',
+          playfulness: aiSettings.playfulness || 'equilibrado',
+          formality: aiSettings.formality || 'informal'
+        })
+      }
+    } catch (error) {
+      console.error('Erro ao carregar personalização:', error)
+    }
+  }
+
+  const handleSavePersonalization = async () => {
+    setIsSavingPersonalization(true)
+    try {
+      const response = await fetch('/api/profile/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(personalization),
+      })
+
+      if (response.ok) {
+        setIsEditingPersonalization(false)
+        await loadPersonalization()
+      } else {
+        console.error('Erro ao salvar personalização')
+      }
+    } catch (error) {
+      console.error('Erro ao salvar personalização:', error)
+    } finally {
+      setIsSavingPersonalization(false)
     }
   }
 
@@ -481,7 +546,228 @@ export default function AccountClient() {
                 />
               </button>
             </motion.div>
+          </div>
 
+          {/* Divider */}
+          <div className="border-t border-gray-100 dark:border-gray-800 my-12" />
+
+          {/* Personalização da IA */}
+          <div className="space-y-6 mb-12">
+            <h2 className="text-xl font-light text-gray-900 dark:text-white text-center mb-8">
+              personalização da ia
+            </h2>
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.45 }}
+              className="p-6 bg-gradient-to-br from-pink-50 to-purple-50 dark:from-pink-900/10 dark:to-purple-900/10 rounded-2xl border border-pink-200 dark:border-pink-800"
+            >
+              <div className="flex items-start gap-3 mb-4">
+                <span className="text-2xl">🤖</span>
+                <div className="flex-1">
+                  <p className="text-base font-light text-gray-900 dark:text-white mb-1">
+                    personalize como a ia conversa com você
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 font-light">
+                    ajuste o tom, gírias e personalidade da Luna
+                  </p>
+                </div>
+              </div>
+
+              {isEditingPersonalization ? (
+                <div className="space-y-4 mt-6">
+                  {/* Informações Pessoais */}
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">informações pessoais</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <input
+                        type="number"
+                        value={personalization.age}
+                        onChange={(e) => setPersonalization(prev => ({ ...prev, age: e.target.value }))}
+                        placeholder="idade"
+                        className="px-3 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg text-sm font-light text-gray-900 dark:text-white focus:outline-none focus:border-pink-500 dark:focus:border-pink-500 transition-colors"
+                      />
+                      <input
+                        type="text"
+                        value={personalization.gender}
+                        onChange={(e) => setPersonalization(prev => ({ ...prev, gender: e.target.value }))}
+                        placeholder="gênero"
+                        className="px-3 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg text-sm font-light text-gray-900 dark:text-white focus:outline-none focus:border-pink-500 dark:focus:border-pink-500 transition-colors"
+                      />
+                      <input
+                        type="text"
+                        value={personalization.profession}
+                        onChange={(e) => setPersonalization(prev => ({ ...prev, profession: e.target.value }))}
+                        placeholder="profissão"
+                        className="px-3 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg text-sm font-light text-gray-900 dark:text-white focus:outline-none focus:border-pink-500 dark:focus:border-pink-500 transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Nível de Gírias */}
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">nível de gírias</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                      {[
+                        { value: 'sem_girias', label: 'sem gírias' },
+                        { value: 'pouco', label: 'pouco' },
+                        { value: 'moderado', label: 'moderado' },
+                        { value: 'bastante', label: 'bastante' },
+                        { value: 'muito', label: 'muito' }
+                      ].map((option) => (
+                        <button
+                          key={option.value}
+                          onClick={() => setPersonalization(prev => ({ ...prev, slangLevel: option.value }))}
+                          className={`px-3 py-2 rounded-lg text-xs font-light transition-all ${
+                            personalization.slangLevel === option.value
+                              ? 'bg-pink-600 text-white'
+                              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-pink-300 dark:hover:border-pink-700'
+                          }`}
+                          type="button"
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Personalidade */}
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">personalidade</h3>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { value: 'seria', label: 'séria' },
+                        { value: 'equilibrado', label: 'equilibrado' },
+                        { value: 'brincalhona', label: 'brincalhona' }
+                      ].map((option) => (
+                        <button
+                          key={option.value}
+                          onClick={() => setPersonalization(prev => ({ ...prev, playfulness: option.value }))}
+                          className={`px-3 py-2 rounded-lg text-xs font-light transition-all ${
+                            personalization.playfulness === option.value
+                              ? 'bg-pink-600 text-white'
+                              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-pink-300 dark:hover:border-pink-700'
+                          }`}
+                          type="button"
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Formalidade */}
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">formalidade</h3>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { value: 'formal', label: 'formal' },
+                        { value: 'informal', label: 'informal' },
+                        { value: 'muito_informal', label: 'bem casual' }
+                      ].map((option) => (
+                        <button
+                          key={option.value}
+                          onClick={() => setPersonalization(prev => ({ ...prev, formality: option.value }))}
+                          className={`px-3 py-2 rounded-lg text-xs font-light transition-all ${
+                            personalization.formality === option.value
+                              ? 'bg-pink-600 text-white'
+                              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-pink-300 dark:hover:border-pink-700'
+                          }`}
+                          type="button"
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Botões de Ação */}
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      onClick={() => {
+                        setIsEditingPersonalization(false)
+                        loadPersonalization()
+                      }}
+                      className="flex-1 px-4 py-2 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-light hover:bg-gray-50 dark:hover:bg-gray-800 transition-all cursor-pointer text-sm"
+                      type="button"
+                    >
+                      cancelar
+                    </button>
+                    <button
+                      onClick={handleSavePersonalization}
+                      disabled={isSavingPersonalization}
+                      className="flex-1 px-4 py-2 bg-pink-600 text-white rounded-lg font-light hover:bg-pink-700 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                      type="button"
+                    >
+                      {isSavingPersonalization ? 'salvando...' : 'salvar'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3 mt-6">
+                  {/* Resumo das Configurações */}
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    {personalization.age && (
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">idade:</span>
+                        <span className="ml-2 text-gray-900 dark:text-white font-light">{personalization.age} anos</span>
+                      </div>
+                    )}
+                    {personalization.gender && (
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">gênero:</span>
+                        <span className="ml-2 text-gray-900 dark:text-white font-light">{personalization.gender}</span>
+                      </div>
+                    )}
+                    {personalization.profession && (
+                      <div className="col-span-2">
+                        <span className="text-gray-500 dark:text-gray-400">profissão:</span>
+                        <span className="ml-2 text-gray-900 dark:text-white font-light">{personalization.profession}</span>
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400">gírias:</span>
+                      <span className="ml-2 text-gray-900 dark:text-white font-light">
+                        {personalization.slangLevel === 'sem_girias' ? 'sem gírias' :
+                         personalization.slangLevel === 'pouco' ? 'pouco' :
+                         personalization.slangLevel === 'moderado' ? 'moderado' :
+                         personalization.slangLevel === 'bastante' ? 'bastante' : 'muito'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400">personalidade:</span>
+                      <span className="ml-2 text-gray-900 dark:text-white font-light">
+                        {personalization.playfulness === 'seria' ? 'séria' :
+                         personalization.playfulness === 'equilibrado' ? 'equilibrado' : 'brincalhona'}
+                      </span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-gray-500 dark:text-gray-400">formalidade:</span>
+                      <span className="ml-2 text-gray-900 dark:text-white font-light">
+                        {personalization.formality === 'formal' ? 'formal' :
+                         personalization.formality === 'informal' ? 'informal' : 'bem casual'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setIsEditingPersonalization(true)}
+                    className="w-full px-4 py-2 bg-pink-600 text-white rounded-lg font-light hover:bg-pink-700 transition-all cursor-pointer text-sm"
+                    type="button"
+                  >
+                    personalizar ia
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-gray-100 dark:border-gray-800 my-12" />
+
+          {/* Ações de Conta */}
+          <div className="space-y-6 mb-12">
             {/* Deletar Conta */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
