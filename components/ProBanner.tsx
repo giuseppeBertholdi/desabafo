@@ -19,7 +19,7 @@ const ProBanner = memo(function ProBanner() {
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="fixed top-3 right-4 sm:right-6 z-50"
+      className="fixed top-3 right-4 sm:right-6 z-[70]"
     >
       <motion.button
         whileHover={{ scale: 1.02 }}
