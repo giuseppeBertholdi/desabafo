@@ -94,8 +94,9 @@ export async function checkMonthlyLimit(
   const supabase = createRouteHandlerClient({ cookies })
   
   try {
-    // Calcular mês atual no formato "YYYY-MM"
+    // Calcular início do mês atual e formato "YYYY-MM"
     const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
     const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
     
     // Contar uso no mês atual baseado no tipo
