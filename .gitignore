@@ -122,3 +122,6 @@ coverage/
 
 # Local Netlify folder
 .netlify
+
+# Google Cloud Credentials (arquivo com credenciais sensíveis)
+google-cloud-credentials.json

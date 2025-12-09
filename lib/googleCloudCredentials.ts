@@ -1,9 +1,14 @@
 /**
  * Google Cloud Credentials Helper
  * 
- * Para reduzir o tamanho das variáveis de ambiente,
- * use variáveis individuais em vez de um JSON grande
+ * Suporta três métodos (em ordem de prioridade):
+ * 1. Arquivo google-cloud-credentials.json (desenvolvimento local)
+ * 2. Variáveis individuais (produção - Netlify)
+ * 3. JSON completo via GOOGLE_CLOUD_CREDENTIALS (fallback)
  */
+
+import { readFileSync } from 'fs'
+import { join } from 'path'
 
 interface GoogleCredentials {
   type: string
@@ -16,17 +21,36 @@ interface GoogleCredentials {
   token_uri: string
   auth_provider_x509_cert_url: string
   client_x509_cert_url: string
+  universe_domain?: string
 }
 
 /**
  * Obtém as credenciais do Google Cloud
  * 
- * Suporta dois métodos:
- * 1. JSON completo via GOOGLE_CLOUD_CREDENTIALS (desenvolvimento)
+ * Ordem de prioridade:
+ * 1. Arquivo google-cloud-credentials.json (desenvolvimento local)
  * 2. Variáveis individuais (produção - Netlify)
+ * 3. JSON completo via GOOGLE_CLOUD_CREDENTIALS (fallback)
  */
 export function getGoogleCloudCredentials(): GoogleCredentials | null {
-  // Método 1: Tentar usar variáveis individuais (preferido para produção)
+  // Método 1: Tentar ler do arquivo (desenvolvimento local)
+  try {
+    const credentialsPath = join(process.cwd(), 'google-cloud-credentials.json')
+    const credentialsFile = readFileSync(credentialsPath, 'utf-8')
+    const credentials = JSON.parse(credentialsFile)
+    
+    // Validar campos obrigatórios
+    if (!credentials.type || !credentials.project_id || !credentials.private_key || !credentials.client_email) {
+      console.error('Credenciais incompletas no arquivo google-cloud-credentials.json')
+    } else {
+      return credentials
+    }
+  } catch (error) {
+    // Arquivo não existe ou erro ao ler - continuar para outros métodos
+    // Não logar erro aqui para não poluir logs em produção
+  }
+
+  // Método 2: Tentar usar variáveis individuais (preferido para produção)
   const privateKey = process.env.GOOGLE_PRIVATE_KEY
   const clientEmail = process.env.GOOGLE_CLIENT_EMAIL
   const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID
@@ -47,7 +71,7 @@ export function getGoogleCloudCredentials(): GoogleCredentials | null {
     }
   }
 
-  // Método 2: Fallback para JSON completo (desenvolvimento)
+  // Método 3: Fallback para JSON completo via variável de ambiente
   const credentialsJson = process.env.GOOGLE_CLOUD_CREDENTIALS
   if (credentialsJson) {
     try {
