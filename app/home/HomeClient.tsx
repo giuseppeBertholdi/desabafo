@@ -134,7 +134,7 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className={`fixed ${plan === 'free' ? 'top-16 sm:top-20' : 'top-6 sm:top-8'} left-16 md:left-6 lg:left-8 z-50 flex items-center`}
+        className={`fixed ${plan === 'free' ? 'top-4 sm:top-6 md:top-20' : 'top-4 sm:top-6 md:top-8'} left-4 sm:left-6 md:left-6 lg:left-8 z-50 flex items-center`}
       >
         <h1 className="text-lg sm:text-xl md:text-2xl font-light text-gray-900 dark:text-white tracking-tight">desabafo.io</h1>
       </motion.div>
@@ -143,7 +143,7 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
       <Sidebar />
 
       {/* Switch Modo Melhor Amigo no canto superior direito */}
-      <div className={`fixed ${plan === 'free' ? 'top-14 sm:top-18' : 'top-5 sm:top-6'} right-4 sm:right-6 z-50`}>
+      <div className={`fixed ${plan === 'free' ? 'top-4 sm:top-6 md:top-18' : 'top-4 sm:top-6 md:top-6'} right-4 sm:right-6 z-50`}>
         {/* Modo Melhor Amigo */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}

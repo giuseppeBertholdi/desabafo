@@ -685,10 +685,10 @@ export default function JournalClient({ firstName }: { firstName: string }) {
 
       <Sidebar />
 
-      <div className="flex min-h-screen pl-20 sm:pl-24">
+      <div className="flex flex-col md:flex-row min-h-screen md:pl-20 md:pl-24">
         {/* Sidebar de entradas */}
-        <div className="w-80 border-r border-gray-100 dark:border-gray-800 pt-20 pb-8 overflow-y-auto">
-          <div className="px-6 mb-6">
+        <div className="w-full md:w-80 border-r-0 md:border-r border-gray-100 dark:border-gray-800 pt-20 pb-4 md:pb-8 overflow-y-auto max-h-[50vh] md:max-h-none">
+          <div className="px-4 md:px-6 mb-4 md:mb-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-light text-gray-900 dark:text-white">diário</h2>
               <div className="flex items-center gap-2">
@@ -896,13 +896,13 @@ export default function JournalClient({ firstName }: { firstName: string }) {
         </div>
 
         {/* Área principal */}
-        <div className="flex-1 pt-20 pb-8">
+        <div className="flex-1 pt-4 md:pt-20 pb-8">
           {viewMode === 'write' ? (
-            <div className="max-w-3xl mx-auto px-8">
+            <div className="max-w-3xl mx-auto px-4 md:px-8">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 sm:p-12"
+                className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-8 md:p-12"
               >
                 {/* Header */}
                 <div className="mb-6">
@@ -1171,11 +1171,11 @@ export default function JournalClient({ firstName }: { firstName: string }) {
               </motion.div>
             </div>
           ) : selectedEntryData ? (
-            <div className="max-w-3xl mx-auto px-8">
+            <div className="max-w-3xl mx-auto px-4 md:px-8">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 sm:p-12"
+                className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-8 md:p-12"
               >
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-4">
