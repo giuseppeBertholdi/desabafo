@@ -1,6 +1,7 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { checkUserPlan } from '@/lib/planAuthorization'
 
 const MAX_SESSIONS = 50
 const MAX_DURATION_SECONDS = 600 // 10 minutos
@@ -63,14 +64,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar se o usuário é PRO
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('tier')
-      .eq('user_id', session.user.id)
-      .single()
-
-    if (!profile || profile.tier !== 'pro') {
-      return NextResponse.json({ error: 'Modo voz disponível apenas no plano PRO' }, { status: 403 })
+    const plan = await checkUserPlan(session.user.id)
+    
+    if (plan !== 'pro') {
+      return NextResponse.json({ 
+        error: 'Modo voz disponível apenas no plano PRO',
+        plan: 'free',
+        upgradeUrl: '/pricing'
+      }, { status: 403 })
     }
 
     // Contar quantas sessões já foram usadas
