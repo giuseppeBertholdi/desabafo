@@ -12,7 +12,7 @@ import { useUserPlan } from '@/lib/getUserPlanClient'
 import { useRealtimeMini } from '@/hooks/useRealtimeMini'
 import { useToast } from '@/contexts/ToastContext'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
-import VoiceSessionManager from '@/components/VoiceSessionManager'
+import VoiceUsageBar from '@/components/VoiceUsageBar'
 
 interface ChatClientProps {
   firstName: string
@@ -471,10 +471,16 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const mediaStreamRef = useRef<MediaStream | null>(null)
   
-  // Voice Session Management
-  const [voiceSessionId, setVoiceSessionId] = useState<string | null>(null)
-  const [voiceSessionDuration, setVoiceSessionDuration] = useState(0)
-  const voiceSessionTimerRef = useRef<NodeJS.Timeout | null>(null)
+  // Estados para rastreamento de uso de voz
+  const [voiceUsage, setVoiceUsage] = useState({
+    minutesUsed: 0,
+    maxMinutes: 500,
+    isLimitReached: false,
+    remainingMinutes: 500
+  })
+  const [isLoadingUsage, setIsLoadingUsage] = useState(true)
+  const voiceSessionStartTime = useRef<number | null>(null)
+  const voiceUsageTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Hook para Realtime Mini (substitui Google Cloud quando voiceMode está ativo)
   const realtimeSession = useRealtimeMini({
@@ -623,6 +629,71 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
     }
   }
 
+  // Buscar uso de voz do mês atual
+  const fetchVoiceUsage = useCallback(async () => {
+    try {
+      setIsLoadingUsage(true)
+      const response = await fetch('/api/voice/usage')
+      if (response.ok) {
+        const data = await response.json()
+        setVoiceUsage({
+          minutesUsed: data.minutesUsed,
+          maxMinutes: data.maxMinutes,
+          isLimitReached: data.isLimitReached,
+          remainingMinutes: data.remainingMinutes
+        })
+      }
+    } catch (error) {
+      console.error('Erro ao buscar uso de voz:', error)
+    } finally {
+      setIsLoadingUsage(false)
+    }
+  }, [])
+
+  // Registrar uso de voz (adicionar minutos)
+  const recordVoiceUsage = useCallback(async (minutes: number) => {
+    try {
+      const response = await fetch('/api/voice/usage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ minutes })
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setVoiceUsage({
+          minutesUsed: data.minutesUsed,
+          maxMinutes: data.maxMinutes,
+          isLimitReached: data.isLimitReached,
+          remainingMinutes: data.remainingMinutes
+        })
+        
+        // Se atingiu o limite, mostrar notificação e parar sessão
+        if (data.isLimitReached) {
+          showError('Você atingiu o limite de 500 minutos de voz deste mês!')
+          if (realtimeSession.isActive) {
+            stopRecording()
+          }
+        }
+      } else if (response.status === 403) {
+        // Limite atingido
+        const data = await response.json()
+        setVoiceUsage({
+          minutesUsed: data.minutesUsed,
+          maxMinutes: data.maxMinutes,
+          isLimitReached: true,
+          remainingMinutes: 0
+        })
+        showError('Você atingiu o limite de 500 minutos de voz deste mês!')
+        if (realtimeSession.isActive) {
+          stopRecording()
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao registrar uso de voz:', error)
+    }
+  }, [showError, realtimeSession])
+
   // Atualizar localStorage quando o modo mudar
   useEffect(() => {
     localStorage.setItem('bestFriendMode', bestFriendMode.toString())
@@ -644,6 +715,22 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
       setMessages([initialMessage])
     }
   }, [voiceMode, firstName, tema]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Buscar uso de voz quando entrar no modo voz
+  useEffect(() => {
+    if (voiceMode && plan === 'pro') {
+      fetchVoiceUsage()
+    }
+  }, [voiceMode, plan, fetchVoiceUsage])
+
+  // Limpar timer ao desmontar
+  useEffect(() => {
+    return () => {
+      if (voiceUsageTimerRef.current) {
+        clearInterval(voiceUsageTimerRef.current)
+      }
+    }
+  }, [])
 
   // Função para terminar conversa temporária
   const handleEndTemporaryChat = () => {
@@ -688,49 +775,15 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
   }
 
 
-  // Handlers para VoiceSessionManager
-  const handleVoiceSessionStart = (sessionId: string, initialDuration: number = 0) => {
-    setVoiceSessionId(sessionId)
-    setVoiceSessionDuration(initialDuration)
-    
-    // Iniciar timer
-    if (voiceSessionTimerRef.current) {
-      clearInterval(voiceSessionTimerRef.current)
-    }
-    voiceSessionTimerRef.current = setInterval(() => {
-      setVoiceSessionDuration(prev => prev + 1)
-    }, 1000)
-    
-    // Iniciar gravação
-    startRecording()
-  }
-
-  const handleVoiceSessionEnd = () => {
-    if (voiceSessionTimerRef.current) {
-      clearInterval(voiceSessionTimerRef.current)
-      voiceSessionTimerRef.current = null
-    }
-    setVoiceSessionId(null)
-    setVoiceSessionDuration(0)
-    
-    // Parar gravação se estiver ativa
-    if (realtimeSession.isActive) {
-      stopRecording()
-    }
-  }
-
-  // Limpar timer ao desmontar
-  useEffect(() => {
-    return () => {
-      if (voiceSessionTimerRef.current) {
-        clearInterval(voiceSessionTimerRef.current)
-      }
-    }
-  }, [])
-
   // Iniciar gravação (apenas para usuários Pro)
   const startRecording = async () => {
     if (plan !== 'pro') {
+      return
+    }
+
+    // Verificar se atingiu o limite antes de iniciar
+    if (voiceUsage.isLimitReached) {
+      showError('Você atingiu o limite de 500 minutos de voz deste mês!')
       return
     }
 
@@ -739,6 +792,23 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
       interruptAudio()
       setIsProcessingAudio(true)
       await realtimeSession.startSession()
+      
+      // Marcar início da sessão
+      voiceSessionStartTime.current = Date.now()
+      
+      // Iniciar timer para registrar uso a cada minuto
+      voiceUsageTimerRef.current = setInterval(() => {
+        if (voiceSessionStartTime.current) {
+          const elapsedMs = Date.now() - voiceSessionStartTime.current
+          const elapsedMinutes = elapsedMs / (1000 * 60)
+          
+          // Registrar a cada 1 minuto
+          if (elapsedMinutes >= 1) {
+            recordVoiceUsage(1) // Registrar 1 minuto
+            voiceSessionStartTime.current = Date.now() // Reset timer
+          }
+        }
+      }, 5000) // Verificar a cada 5 segundos
     } catch (error) {
       console.error('Erro ao iniciar gravação:', error)
       showError('Não foi possível acessar o microfone. Verifique as permissões.')
@@ -751,6 +821,25 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
     if (realtimeSession.isActive) {
       realtimeSession.stopSession()
       setIsRecording(false)
+      
+      // Registrar tempo final
+      if (voiceSessionStartTime.current) {
+        const elapsedMs = Date.now() - voiceSessionStartTime.current
+        const elapsedMinutes = elapsedMs / (1000 * 60)
+        
+        // Registrar minutos restantes se >= 0.1 minuto (6 segundos)
+        if (elapsedMinutes >= 0.1) {
+          recordVoiceUsage(Number(elapsedMinutes.toFixed(2)))
+        }
+        
+        voiceSessionStartTime.current = null
+      }
+      
+      // Limpar timer
+      if (voiceUsageTimerRef.current) {
+        clearInterval(voiceUsageTimerRef.current)
+        voiceUsageTimerRef.current = null
+      }
     }
   }
 
@@ -1352,25 +1441,8 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
       )}
 
       {/* Chat Container - Estilo Calm */}
-      <div className="flex items-start justify-center min-h-screen px-3 sm:px-4 md:px-6 pb-20 sm:pb-24 md:pb-32 pt-24 bg-gradient-to-b from-transparent via-slate-50/30 to-slate-50/50 dark:via-slate-900/20 dark:to-slate-900/40 gap-6">
-        {/* Voice Session Manager - Sidebar esquerda no modo voz */}
-        {voiceMode && plan === 'pro' && (
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="hidden lg:block w-80 flex-shrink-0"
-          >
-            <VoiceSessionManager
-              onSessionStart={handleVoiceSessionStart}
-              onSessionEnd={handleVoiceSessionEnd}
-              currentSessionId={voiceSessionId}
-              currentDuration={voiceSessionDuration}
-              isActive={isRecording || realtimeSession.isActive}
-            />
-          </motion.div>
-        )}
-        
-        <div className="w-full max-w-2xl flex-1">
+      <div className="flex items-end justify-center min-h-screen px-3 sm:px-4 md:px-6 pb-20 sm:pb-24 md:pb-32 bg-gradient-to-b from-transparent via-slate-50/30 to-slate-50/50 dark:via-slate-900/20 dark:to-slate-900/40">
+        <div className="w-full max-w-2xl">
           
           {/* Messages - Estilo Calm com mais espaçamento */}
           {/* Ocultar mensagens no modo voz */}
@@ -1514,17 +1586,6 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
             {voiceMode && plan === 'pro' ? (
               /* Modo Voz - Estilo Calm */
               <div className="flex flex-col items-center justify-center min-h-[300px] space-y-6">
-                {/* Voice Session Manager Mobile - Mostrar no mobile acima */}
-                <div className="lg:hidden w-full mb-4">
-                  <VoiceSessionManager
-                    onSessionStart={handleVoiceSessionStart}
-                    onSessionEnd={handleVoiceSessionEnd}
-                    currentSessionId={voiceSessionId}
-                    currentDuration={voiceSessionDuration}
-                    isActive={isRecording || realtimeSession.isActive}
-                  />
-                </div>
-
                 {/* Título centralizado no topo */}
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -1539,75 +1600,115 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                   </p>
                 </motion.div>
 
+                {/* Barra de uso de voz */}
+                {!isLoadingUsage && (
+                  <VoiceUsageBar
+                    minutesUsed={voiceUsage.minutesUsed}
+                    maxMinutes={voiceUsage.maxMinutes}
+                    isLimitReached={voiceUsage.isLimitReached}
+                  />
+                )}
+
                 {/* Aviso de privacidade */}
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="w-full max-w-md mx-auto"
-                >
-                  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 shadow-sm">
-                    <div className="flex items-start gap-3">
-                      <span className="text-lg">🔒</span>
-                      <div className="flex-1">
-                        <p className="text-sm text-amber-800 dark:text-amber-200 font-light leading-relaxed">
-                          <strong className="font-medium">totalmente seguro:</strong> suas conversas por voz não ficam salvas nos chats nem nos insights. tudo é privado e temporário.
-                        </p>
+                {!voiceUsage.isLimitReached && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="w-full max-w-md mx-auto"
+                  >
+                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 shadow-sm">
+                      <div className="flex items-start gap-3">
+                        <span className="text-lg">🔒</span>
+                        <div className="flex-1">
+                          <p className="text-sm text-amber-800 dark:text-amber-200 font-light leading-relaxed">
+                            <strong className="font-medium">totalmente seguro:</strong> suas conversas por voz não ficam salvas nos chats nem nos insights. tudo é privado e temporário.
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </motion.div>
+                  </motion.div>
+                )}
                 
                 {/* Botão grande e centralizado - Estilo Calm */}
-                <div className="relative flex items-center justify-center">
-                  {/* Botão principal - Estilo Calm mais suave */}
-                  <motion.button
-                    whileHover={!(isRecording || realtimeSession.isActive || realtimeSession.isConnecting) ? { scale: 1.05 } : {}}
-                    whileTap={!(isRecording || realtimeSession.isActive || realtimeSession.isConnecting) ? { scale: 0.95 } : {}}
-                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      if (isRecording || realtimeSession.isActive) {
-                        // Pausar gravação mas não finalizar sessão
-                        stopRecording()
-                      } else if (voiceSessionId) {
-                        // Continuar gravação da sessão existente
-                        startRecording()
-                      } else {
-                        // Precisa criar sessão primeiro
-                        showError('Crie uma nova sessão primeiro ou continue uma existente')
-                      }
-                    }}
-                    disabled={realtimeSession.isConnecting || !voiceSessionId}
-                    className={`relative w-28 h-28 sm:w-32 sm:h-32 rounded-full flex items-center justify-center transition-all cursor-pointer ${
-                      (isRecording || realtimeSession.isActive)
-                        ? 'bg-gradient-to-br from-pink-400 to-purple-500'
-                        : 'bg-gradient-to-br from-pink-300 to-purple-400 hover:from-pink-400 hover:to-purple-500'
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                {!voiceUsage.isLimitReached ? (
+                  <div className="relative flex items-center justify-center">
+                    {/* Botão principal - Estilo Calm mais suave */}
+                    <motion.button
+                      whileHover={!(isRecording || realtimeSession.isActive || realtimeSession.isConnecting || voiceUsage.isLimitReached) ? { scale: 1.05 } : {}}
+                      whileTap={!(isRecording || realtimeSession.isActive || realtimeSession.isConnecting || voiceUsage.isLimitReached) ? { scale: 0.95 } : {}}
+                      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (voiceUsage.isLimitReached) {
+                          showError('Você atingiu o limite de 500 minutos de voz deste mês!')
+                          return
+                        }
+                        if (isRecording || realtimeSession.isActive) {
+                          // Encerrar sessão diretamente
+                          stopRecording()
+                        } else {
+                          startRecording()
+                        }
+                      }}
+                      disabled={realtimeSession.isConnecting || voiceUsage.isLimitReached}
+                      className={`relative w-28 h-28 sm:w-32 sm:h-32 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                        voiceUsage.isLimitReached
+                          ? 'bg-gradient-to-br from-gray-300 to-gray-400 cursor-not-allowed'
+                          : (isRecording || realtimeSession.isActive)
+                          ? 'bg-gradient-to-br from-pink-400 to-purple-500'
+                          : 'bg-gradient-to-br from-pink-300 to-purple-400 hover:from-pink-400 hover:to-purple-500'
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      {realtimeSession.isConnecting ? (
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                          className="w-8 h-8 border-3 border-white/80 border-t-transparent rounded-full"
+                        />
+                      ) : (isRecording || realtimeSession.isActive) ? (
+                        <motion.div
+                          animate={{ scale: [1, 1.1, 1] }}
+                          transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
+                          className="w-8 h-8 bg-white rounded-sm"
+                        />
+                      ) : voiceUsage.isLimitReached ? (
+                        <svg className="w-10 h-10 sm:w-12 sm:h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                        </svg>
+                      ) : (
+                        <svg className="w-10 h-10 sm:w-12 sm:h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                          <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+                        </svg>
+                      )}
+                    </motion.button>
+                  </div>
+                ) : (
+                  /* Mensagem de bloqueio quando limite atingido */
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="text-center"
                   >
-                    {realtimeSession.isConnecting ? (
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
-                        className="w-8 h-8 border-3 border-white/80 border-t-transparent rounded-full"
-                      />
-                    ) : (isRecording || realtimeSession.isActive) ? (
-                      <motion.div
-                        animate={{ scale: [1, 1.1, 1] }}
-                        transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
-                        className="w-8 h-8 bg-white rounded-sm"
-                      />
-                    ) : (
+                    <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center mx-auto mb-4 opacity-50">
                       <svg className="w-10 h-10 sm:w-12 sm:h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
-                        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
                       </svg>
-                    )}
-                  </motion.button>
-                </div>
+                    </div>
+                  </motion.div>
+                )}
 
                 {/* Status suave - Estilo Calm */}
                 <div className="text-center space-y-3">
-                  {realtimeSession.isConnecting && (
+                  {voiceUsage.isLimitReached ? (
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-[15px] text-red-600 dark:text-red-400 font-light tracking-wide"
+                    >
+                      limite de 500 minutos atingido
+                    </motion.p>
+                  ) : realtimeSession.isConnecting ? (
                     <motion.p
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -1615,8 +1716,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                     >
                       conectando...
                     </motion.p>
-                  )}
-                  {(isRecording || realtimeSession.isActive) && !realtimeSession.isConnecting && (
+                  ) : (isRecording || realtimeSession.isActive) && !realtimeSession.isConnecting ? (
                     <motion.p
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -1624,8 +1724,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                     >
                       estou ouvindo...
                     </motion.p>
-                  )}
-                  {!isRecording && !realtimeSession.isActive && !realtimeSession.isConnecting && (
+                  ) : (
                     <motion.p
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
