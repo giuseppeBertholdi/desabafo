@@ -50,7 +50,7 @@ export default function PricingClient({ userPlan = 'free' }: PricingClientProps)
         'histórico completo',
       ],
       cta: 'escolher essential',
-      popular: true,
+      popular: false,
     },
     {
       id: 'pro',
@@ -71,7 +71,7 @@ export default function PricingClient({ userPlan = 'free' }: PricingClientProps)
         'histórico completo',
       ],
       cta: 'escolher pro',
-      popular: false,
+      popular: true,
     },
   ]
 

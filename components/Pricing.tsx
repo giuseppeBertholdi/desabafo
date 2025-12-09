@@ -52,7 +52,7 @@ export default function Pricing() {
         'histórico completo',
       ],
       cta: 'começar agora',
-      popular: true,
+      popular: false,
       planId: 'essential',
     },
     {
@@ -73,7 +73,7 @@ export default function Pricing() {
         'histórico completo',
       ],
       cta: 'começar agora',
-      popular: false,
+      popular: true,
       planId: 'pro',
     },
   ]
