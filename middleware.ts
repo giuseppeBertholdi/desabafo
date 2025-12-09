@@ -5,26 +5,63 @@ import type { NextRequest } from 'next/server'
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
 
-  const supabase = createMiddlewareClient({ req, res })
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+  // Não verificar autenticação para rotas públicas
+  const publicPaths = ['/login', '/auth/callback', '/']
+  if (publicPaths.includes(req.nextUrl.pathname)) {
+    return res
+  }
 
-  // protege home, chat, history, insights, pricing, account e onboarding
-  if ((req.nextUrl.pathname.startsWith('/home') || 
-       req.nextUrl.pathname.startsWith('/chat') ||
-       req.nextUrl.pathname.startsWith('/history') ||
-       req.nextUrl.pathname.startsWith('/insights') ||
-       req.nextUrl.pathname.startsWith('/pricing') ||
-       req.nextUrl.pathname.startsWith('/account') ||
-       req.nextUrl.pathname.startsWith('/onboarding')) && !session) {
-    return NextResponse.redirect(new URL('/login', req.url))
+  const supabase = createMiddlewareClient({ req, res })
+  
+  try {
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.getSession()
+
+    // Se houver erro ao buscar sessão, permitir passar (evitar loops)
+    if (error) {
+      console.warn('Erro ao buscar sessão no middleware:', error.message)
+      return res
+    }
+
+    // protege home, chat, history, insights, pricing, account e onboarding
+    const protectedPaths = ['/home', '/chat', '/history', '/insights', '/pricing', '/account', '/onboarding']
+    const isProtectedPath = protectedPaths.some(path => req.nextUrl.pathname.startsWith(path))
+
+    if (isProtectedPath && !session) {
+      // Redirecionar para login apenas se não estiver já na página de login
+      if (req.nextUrl.pathname !== '/login') {
+        return NextResponse.redirect(new URL('/login', req.url))
+      }
+    }
+  } catch (error) {
+    // Em caso de erro, permitir passar para evitar loops
+    console.error('Erro no middleware:', error)
+    return res
   }
 
   return res
 }
 
 export const config = {
-    matcher: ['/home/:path*', '/home', '/chat/:path*', '/chat', '/history/:path*', '/history', '/insights/:path*', '/insights', '/pricing/:path*', '/pricing', '/account/:path*', '/account', '/onboarding/:path*', '/onboarding'],
-  }
+  matcher: [
+    '/home/:path*',
+    '/home',
+    '/chat/:path*',
+    '/chat',
+    '/history/:path*',
+    '/history',
+    '/insights/:path*',
+    '/insights',
+    '/pricing/:path*',
+    '/pricing',
+    '/account/:path*',
+    '/account',
+    '/onboarding/:path*',
+    '/onboarding',
+    '/login',
+    '/auth/callback',
+  ],
+}
   

@@ -16,8 +16,16 @@ export async function GET(request: Request) {
         return NextResponse.redirect(new URL('/login?error=auth_error', request.url))
       }
       
+      // Aguardar um pouco para garantir que os cookies foram definidos
+      await new Promise(resolve => setTimeout(resolve, 100))
+
       // Verificar se a sessão foi criada
-      const { data: { session } } = await supabase.auth.getSession()
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error('Erro ao buscar sessão após exchange:', sessionError)
+        return NextResponse.redirect(new URL('/login?error=session_error', request.url))
+      }
       
       if (!session) {
         console.error('Sessão não foi criada após exchange')
@@ -35,7 +43,9 @@ export async function GET(request: Request) {
         // Se tabela não existir ou der erro, ir para onboarding
         if (profileError && profileError.code === 'PGRST116') {
           console.warn('Tabela user_profiles não existe, indo para onboarding')
-          return NextResponse.redirect(new URL('/onboarding', request.url))
+          const redirectUrl = new URL('/onboarding', request.url)
+          redirectUrl.searchParams.set('new', 'true')
+          return NextResponse.redirect(redirectUrl)
         }
 
         // Se não completou onboarding, redirecionar
@@ -44,7 +54,12 @@ export async function GET(request: Request) {
         }
 
         // Onboarding completo, ir para home
-        return NextResponse.redirect(new URL('/home', request.url))
+        // Usar replace para evitar histórico de navegação
+        const homeUrl = new URL('/home', request.url)
+        const response = NextResponse.redirect(homeUrl)
+        // Garantir que os cookies sejam enviados
+        response.headers.set('Cache-Control', 'no-store, must-revalidate')
+        return response
         
       } catch (error) {
         console.error('Erro ao verificar perfil:', error)

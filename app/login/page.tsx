@@ -3,10 +3,32 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 export default function Login() {
   const router = useRouter()
   const supabase = createClientComponentClient()
+  const [isChecking, setIsChecking] = useState(true)
+
+  // Verificar se já está logado e redirecionar
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          // Já está logado, redirecionar para home
+          router.push('/home')
+          router.refresh()
+        }
+      } catch (error) {
+        console.error('Erro ao verificar sessão:', error)
+      } finally {
+        setIsChecking(false)
+      }
+    }
+
+    checkSession()
+  }, [router, supabase.auth])
 
   const handleGoogleLogin = async () => {
     await supabase.auth.signInWithOAuth({
@@ -15,6 +37,15 @@ export default function Login() {
         redirectTo: `${location.origin}/auth/callback`
       }
     })
+  }
+
+  // Mostrar loading enquanto verifica sessão
+  if (isChecking) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-pink-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
+        <div className="text-gray-600 dark:text-gray-400">carregando...</div>
+      </div>
+    )
   }
 
   return (
