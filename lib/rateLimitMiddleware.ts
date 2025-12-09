@@ -31,7 +31,7 @@ export async function withRateLimit(
   try {
     // Obter identificador (userId ou IP)
     let identifier: string
-    let plan: 'free' | 'pro' | 'unauthenticated' = 'unauthenticated'
+    let plan: 'free' | 'essential' | 'pro' | 'unauthenticated' = 'unauthenticated'
 
     if (!options.skipAuth) {
       // Tentar obter usuário autenticado

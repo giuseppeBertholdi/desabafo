@@ -19,6 +19,13 @@ export const RATE_LIMITS = {
     sessions: { requests: 10, window: 24 * 60 * 60 * 1000 }, // 10 por dia
     general: { requests: 100, window: 60 * 1000 }, // 100 por minuto
   },
+  essential: {
+    chat: { requests: 1000000, window: 60 * 60 * 1000 }, // Praticamente infinito
+    insights: { requests: 100, window: 60 * 60 * 1000 }, // 100 por hora
+    journal: { requests: 1000, window: 60 * 60 * 1000 }, // 1000 por hora
+    sessions: { requests: 1000, window: 24 * 60 * 60 * 1000 }, // 1000 por dia
+    general: { requests: 1000, window: 60 * 1000 }, // 1000 por minuto
+  },
   pro: {
     chat: { requests: 1000000, window: 60 * 60 * 1000 }, // Praticamente infinito
     insights: { requests: 100, window: 60 * 60 * 1000 }, // 100 por hora
@@ -167,7 +174,7 @@ function getStore(): Store {
 export async function checkRateLimit(
   identifier: string,
   type: RateLimitType,
-  plan: 'free' | 'pro' | 'unauthenticated' = 'unauthenticated'
+  plan: 'free' | 'essential' | 'pro' | 'unauthenticated' = 'unauthenticated'
 ): Promise<RateLimitResult> {
   const planLimits = RATE_LIMITS[plan] as any
   const limits = planLimits[type] || RATE_LIMITS.unauthenticated.general
@@ -207,7 +214,7 @@ export async function checkRateLimit(
 export async function getRateLimitInfo(
   identifier: string,
   type: RateLimitType,
-  plan: 'free' | 'pro' | 'unauthenticated' = 'unauthenticated'
+  plan: 'free' | 'essential' | 'pro' | 'unauthenticated' = 'unauthenticated'
 ): Promise<Omit<RateLimitResult, 'retryAfter'>> {
   const planLimits = RATE_LIMITS[plan] as any
   const limits = planLimits[type] || RATE_LIMITS.unauthenticated.general
