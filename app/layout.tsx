@@ -7,6 +7,12 @@ import { ToastProvider } from '@/contexts/ToastContext'
 export const metadata: Metadata = {
   title: 'desabafo.io - sua IA terapeuta',
   description: 'converse humanamente com uma IA terapeuta. sempre disponível pra ouvir e ajudar.',
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: '16x16', type: 'image/x-icon' }
+    ],
+  },
 }
 
 export default function RootLayout({
