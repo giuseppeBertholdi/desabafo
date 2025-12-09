@@ -12,6 +12,7 @@ import { useUserPlan } from '@/lib/getUserPlanClient'
 import { useRealtimeMini } from '@/hooks/useRealtimeMini'
 import { useToast } from '@/contexts/ToastContext'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
+import VoiceSessionManager from '@/components/VoiceSessionManager'
 
 interface ChatClientProps {
   firstName: string
@@ -469,6 +470,11 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const mediaStreamRef = useRef<MediaStream | null>(null)
+  
+  // Voice Session Management
+  const [voiceSessionId, setVoiceSessionId] = useState<string | null>(null)
+  const [voiceSessionDuration, setVoiceSessionDuration] = useState(0)
+  const voiceSessionTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Hook para Realtime Mini (substitui Google Cloud quando voiceMode está ativo)
   const realtimeSession = useRealtimeMini({
@@ -681,6 +687,46 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
     }
   }
 
+
+  // Handlers para VoiceSessionManager
+  const handleVoiceSessionStart = (sessionId: string) => {
+    setVoiceSessionId(sessionId)
+    setVoiceSessionDuration(0)
+    
+    // Iniciar timer
+    if (voiceSessionTimerRef.current) {
+      clearInterval(voiceSessionTimerRef.current)
+    }
+    voiceSessionTimerRef.current = setInterval(() => {
+      setVoiceSessionDuration(prev => prev + 1)
+    }, 1000)
+    
+    // Iniciar gravação
+    startRecording()
+  }
+
+  const handleVoiceSessionEnd = () => {
+    if (voiceSessionTimerRef.current) {
+      clearInterval(voiceSessionTimerRef.current)
+      voiceSessionTimerRef.current = null
+    }
+    setVoiceSessionId(null)
+    setVoiceSessionDuration(0)
+    
+    // Parar gravação se estiver ativa
+    if (realtimeSession.isActive) {
+      stopRecording()
+    }
+  }
+
+  // Limpar timer ao desmontar
+  useEffect(() => {
+    return () => {
+      if (voiceSessionTimerRef.current) {
+        clearInterval(voiceSessionTimerRef.current)
+      }
+    }
+  }, [])
 
   // Iniciar gravação (apenas para usuários Pro)
   const startRecording = async () => {
@@ -1306,8 +1352,25 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
       )}
 
       {/* Chat Container - Estilo Calm */}
-      <div className="flex items-end justify-center min-h-screen px-3 sm:px-4 md:px-6 pb-20 sm:pb-24 md:pb-32 bg-gradient-to-b from-transparent via-slate-50/30 to-slate-50/50 dark:via-slate-900/20 dark:to-slate-900/40">
-        <div className="w-full max-w-2xl">
+      <div className="flex items-start justify-center min-h-screen px-3 sm:px-4 md:px-6 pb-20 sm:pb-24 md:pb-32 pt-24 bg-gradient-to-b from-transparent via-slate-50/30 to-slate-50/50 dark:via-slate-900/20 dark:to-slate-900/40 gap-6">
+        {/* Voice Session Manager - Sidebar esquerda no modo voz */}
+        {voiceMode && plan === 'pro' && (
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="hidden lg:block w-80 flex-shrink-0"
+          >
+            <VoiceSessionManager
+              onSessionStart={handleVoiceSessionStart}
+              onSessionEnd={handleVoiceSessionEnd}
+              currentSessionId={voiceSessionId}
+              currentDuration={voiceSessionDuration}
+              isActive={isRecording || realtimeSession.isActive}
+            />
+          </motion.div>
+        )}
+        
+        <div className="w-full max-w-2xl flex-1">
           
           {/* Messages - Estilo Calm com mais espaçamento */}
           {/* Ocultar mensagens no modo voz */}
@@ -1451,6 +1514,17 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
             {voiceMode && plan === 'pro' ? (
               /* Modo Voz - Estilo Calm */
               <div className="flex flex-col items-center justify-center min-h-[300px] space-y-6">
+                {/* Voice Session Manager Mobile - Mostrar no mobile acima */}
+                <div className="lg:hidden w-full mb-4">
+                  <VoiceSessionManager
+                    onSessionStart={handleVoiceSessionStart}
+                    onSessionEnd={handleVoiceSessionEnd}
+                    currentSessionId={voiceSessionId}
+                    currentDuration={voiceSessionDuration}
+                    isActive={isRecording || realtimeSession.isActive}
+                  />
+                </div>
+
                 {/* Título centralizado no topo */}
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -1493,13 +1567,17 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                     onClick={(e) => {
                       e.stopPropagation()
                       if (isRecording || realtimeSession.isActive) {
-                        // Encerrar sessão diretamente
+                        // Pausar gravação mas não finalizar sessão
                         stopRecording()
-                      } else {
+                      } else if (voiceSessionId) {
+                        // Continuar gravação da sessão existente
                         startRecording()
+                      } else {
+                        // Precisa criar sessão primeiro
+                        showError('Crie uma nova sessão primeiro ou continue uma existente')
                       }
                     }}
-                    disabled={realtimeSession.isConnecting}
+                    disabled={realtimeSession.isConnecting || !voiceSessionId}
                     className={`relative w-28 h-28 sm:w-32 sm:h-32 rounded-full flex items-center justify-center transition-all cursor-pointer ${
                       (isRecording || realtimeSession.isActive)
                         ? 'bg-gradient-to-br from-pink-400 to-purple-500'
