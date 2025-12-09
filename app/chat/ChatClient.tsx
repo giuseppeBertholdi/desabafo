@@ -689,9 +689,9 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
 
 
   // Handlers para VoiceSessionManager
-  const handleVoiceSessionStart = (sessionId: string) => {
+  const handleVoiceSessionStart = (sessionId: string, initialDuration: number = 0) => {
     setVoiceSessionId(sessionId)
-    setVoiceSessionDuration(0)
+    setVoiceSessionDuration(initialDuration)
     
     // Iniciar timer
     if (voiceSessionTimerRef.current) {
