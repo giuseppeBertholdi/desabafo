@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     // Buscar informações adicionais para cada usuário
     const usersWithStats = await Promise.all(
       paginatedUserIds.map(async (userId) => {
-        const [sessions, messages, subscription, messageUsage, voiceUsage, firstSession] = await Promise.all([
+        const [sessions, messages, subscription, messageUsage, voiceUsage, firstSessionResult] = await Promise.all([
           supabase.from('chat_sessions').select('*', { count: 'exact', head: true }).eq('user_id', userId),
           supabase.from('messages').select('*', { count: 'exact', head: true }).eq('user_id', userId),
           supabase.from('user_subscriptions').select('plan_type, status').eq('user_id', userId).in('status', ['active', 'trialing']).maybeSingle(),
@@ -52,6 +52,8 @@ export async function GET(request: NextRequest) {
           supabase.from('voice_usage').select('minutes_used').eq('user_id', userId).order('month_year', { ascending: false }).limit(1).maybeSingle(),
           supabase.from('chat_sessions').select('created_at').eq('user_id', userId).order('created_at', { ascending: true }).limit(1).maybeSingle(),
         ])
+
+        const firstSession = firstSessionResult.data
 
         // Tentar buscar perfil do usuário
         let userEmail = 'N/A'
