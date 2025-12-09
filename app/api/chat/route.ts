@@ -150,19 +150,21 @@ async function handleChatRequest(request: NextRequest) {
       isEmergency = aiConfirmation
     }
 
-    // Buscar nickname do perfil se firstName não foi passado
+    // Buscar perfil completo do usuário para personalização
     let nickname = firstName
-    if (!nickname) {
-      try {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('nickname')
-          .eq('user_id', session.user.id)
-          .single()
-        nickname = profile?.nickname || session.user.user_metadata?.name?.split(' ')[0] || session.user.email?.split('@')[0] || 'amigo'
-      } catch (error) {
-        nickname = session.user.user_metadata?.name?.split(' ')[0] || session.user.email?.split('@')[0] || 'amigo'
-      }
+    let userProfile: any = null
+    
+    try {
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('nickname, preferred_name, age, gender, profession, ai_settings')
+        .eq('user_id', session.user.id)
+        .maybeSingle()
+      
+      userProfile = profile
+      nickname = profile?.nickname || firstName || session.user.user_metadata?.name?.split(' ')[0] || session.user.email?.split('@')[0] || 'amigo'
+    } catch (error) {
+      nickname = firstName || session.user.user_metadata?.name?.split(' ')[0] || session.user.email?.split('@')[0] || 'amigo'
     }
 
     // Buscar dados do Spotify e memórias em paralelo para otimizar performance
@@ -287,10 +289,49 @@ async function handleChatRequest(request: NextRequest) {
     // Contexto do tema (se houver)
     const temaContexto = tema ? `\n\nCONTEXTO IMPORTANTE: A pessoa escolheu conversar sobre "${tema}". Use esse contexto para entender melhor o que ela está passando, mas não force o assunto se ela quiser falar de outra coisa.` : ''
 
+    // Construir contexto de personalização
+    let personalizationContext = ''
+    if (userProfile) {
+      personalizationContext = '\n\nINFORMAÇÕES SOBRE A PESSOA (use para personalizar, mas de forma natural):'
+      if (userProfile.age) personalizationContext += `\n- Idade: ${userProfile.age} anos`
+      if (userProfile.gender) personalizationContext += `\n- Gênero: ${userProfile.gender}`
+      if (userProfile.profession) personalizationContext += `\n- Profissão: ${userProfile.profession}`
+      
+      const aiSettings = userProfile.ai_settings || {}
+      if (aiSettings.slang_level) {
+        const slangMap: Record<string, string> = {
+          'sem_girias': 'Use linguagem formal e clara, sem gírias',
+          'pouco': 'Use poucas gírias, mantenha mais formal',
+          'moderado': 'Use gírias moderadamente, equilibrado',
+          'bastante': 'Use bastante gírias, bem descontraído',
+          'muito': 'Use muitas gírias, bem informal, tipo papo de amigos'
+        }
+        personalizationContext += `\n- Tom de gírias: ${slangMap[aiSettings.slang_level] || slangMap.moderado}`
+      }
+      
+      if (aiSettings.playfulness) {
+        const playfulnessMap: Record<string, string> = {
+          'seria': 'Seja mais séria e focada',
+          'equilibrado': 'Balance seriedade com leveza',
+          'brincalhona': 'Seja mais brincalhona e leve'
+        }
+        personalizationContext += `\n- Personalidade: ${playfulnessMap[aiSettings.playfulness] || playfulnessMap.equilibrado}`
+      }
+      
+      if (aiSettings.formality) {
+        const formalityMap: Record<string, string> = {
+          'formal': 'Mantenha um tom mais formal',
+          'informal': 'Seja informal e casual',
+          'muito_informal': 'Seja bem casual, como amigos próximos'
+        }
+        personalizationContext += `\n- Formalidade: ${formalityMap[aiSettings.formality] || formalityMap.informal}`
+      }
+    }
+
     // System instruction base
     let systemInstruction = `Você é a Luna, do desabafo.io - um amigo virtual brasileiro acolhedor que está aqui para ter uma conversa verdadeira. Seu nome é Luna e você deve se apresentar assim quando apropriado.
 
-O nome/apelido da pessoa é: ${nickname}. Use esse nome quando fizer sentido na conversa, de forma natural e casual.
+O nome/apelido da pessoa é: ${nickname}. Use esse nome quando fizer sentido na conversa, de forma natural e casual.${personalizationContext}
 
 Seu jeito de conversar:
 - Tom super casual e brasileiro: use "tá", "pra", "né", "cara", etc
@@ -325,7 +366,7 @@ Você é um amigo de verdade: acolhedor mas também honesto, empático mas tamb�
     if (bestFriendMode) {
       systemInstruction = `Você é a Luna, do desabafo.io - o melhor amigo virtual da pessoa. Seu nome é Luna e você deve se apresentar assim quando apropriado. Você é empática, verdadeira, acolhedora e genuinamente útil.
 
-O nome/apelido da pessoa é: ${nickname}. Use esse nome quando fizer sentido na conversa, de forma natural e casual.
+O nome/apelido da pessoa é: ${nickname}. Use esse nome quando fizer sentido na conversa, de forma natural e casual.${personalizationContext}
 
 Seu jeito de conversar (MODO MELHOR AMIGO):
 - Seja MUITO empático: mostre que você realmente entende e se importa

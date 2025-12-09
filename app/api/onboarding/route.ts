@@ -4,7 +4,17 @@ import { cookies } from 'next/headers'
 
 export async function POST(request: Request) {
   try {
-    const { nickname, preferredName, interests, currentState, whatLookingFor } = await request.json()
+    const { 
+      nickname, 
+      preferredName, 
+      age, 
+      gender, 
+      profession,
+      slangLevel,
+      playfulness,
+      formality
+    } = await request.json()
+    
     const supabase = createRouteHandlerClient({ cookies })
     
     const { data: { session } } = await supabase.auth.getSession()
@@ -17,17 +27,22 @@ export async function POST(request: Request) {
       .from('user_profiles')
       .select('id')
       .eq('user_id', session.user.id)
-      .single()
+      .maybeSingle()
 
     const profileData = {
       user_id: session.user.id,
       nickname: nickname || null,
       preferred_name: preferredName || null,
-      preferences: {
-        interests: interests || [],
-        whatLookingFor: whatLookingFor || ''
+      age: age ? parseInt(age) : null,
+      gender: gender || null,
+      profession: profession || null,
+      ai_settings: {
+        slang_level: slangLevel || 'moderado',
+        playfulness: playfulness || 'equilibrado',
+        formality: formality || 'informal',
+        empathy_level: 'alto',
+        response_length: 'medio'
       },
-      current_state: currentState || null,
       onboarding_completed: true,
       updated_at: new Date().toISOString()
     }
