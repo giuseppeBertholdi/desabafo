@@ -127,23 +127,31 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 relative transition-colors">
       {/* Banner Experimentar Pro */}
-      <ProBanner />
-      
-      {/* Logo desabafo no topo */}
+      {/* Sidebar esquerda com ícones */}
+      <Sidebar />
+
+      {/* Logo desabafo ao lado do botão da sidebar */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className={`fixed ${plan === 'free' ? 'top-4 sm:top-6 md:top-20' : 'top-4 sm:top-6 md:top-8'} left-4 sm:left-6 md:left-6 lg:left-8 z-[70] flex items-center`}
+        className="fixed top-6 left-16 sm:left-16 md:left-20 lg:left-24 z-[70] flex items-center"
       >
-        <h1 className="text-lg sm:text-xl md:text-2xl font-light text-gray-900 dark:text-white tracking-tight">desabafo.io</h1>
+        <button
+          onClick={() => router.push('/home')}
+          className="text-lg sm:text-xl md:text-2xl font-light text-gray-900 dark:text-white tracking-tight hover:text-pink-500 transition-colors cursor-pointer"
+        >
+          desabafo.io
+        </button>
       </motion.div>
 
-      {/* Sidebar esquerda com ícones */}
-      <Sidebar />
+      {/* Botão Upgrade to Pro no topo direito */}
+      <div className="fixed top-4 sm:top-6 right-4 sm:right-6 z-[70]">
+        <ProBanner />
+      </div>
 
-      {/* Switch Modo Melhor Amigo no canto superior direito */}
-      <div className={`fixed ${plan === 'free' ? 'top-4 sm:top-6 md:top-18' : 'top-4 sm:top-6 md:top-6'} right-4 sm:right-6 z-[70]`}>
+      {/* Switch Modo Melhor Amigo abaixo do upgrade */}
+      <div className={`fixed ${plan === 'free' ? 'top-14 sm:top-16' : 'top-14 sm:top-16'} right-4 sm:right-6 z-[70]`}>
         {/* Modo Melhor Amigo */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}

@@ -15,23 +15,19 @@ const ProBanner = memo(function ProBanner() {
   }
 
   return (
-    <motion.div
+    <motion.button
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="fixed top-3 right-4 sm:right-6 z-[70]"
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={() => router.push('/pricing')}
+      className="px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-500 text-white text-sm font-medium rounded-full shadow-lg hover:shadow-xl transition-all cursor-pointer"
+      type="button"
+      aria-label="Experimente o plano Pro"
     >
-      <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={() => router.push('/pricing')}
-        className="px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-500 text-white text-sm font-medium rounded-full shadow-lg hover:shadow-xl transition-all cursor-pointer"
-        type="button"
-        aria-label="Experimente o plano Pro"
-      >
-        experimente o pro
-      </motion.button>
-    </motion.div>
+      experimente o pro
+    </motion.button>
   )
 })
 
