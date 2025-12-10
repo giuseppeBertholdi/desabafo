@@ -111,7 +111,7 @@ export default function PricingClient({ userPlan = 'free' }: PricingClientProps)
 
   const handlePlanClick = (planId: string) => {
     if (planId === 'free') {
-      router.push('/home')
+    router.push('/home')
       return
     }
 
@@ -158,10 +158,10 @@ export default function PricingClient({ userPlan = 'free' }: PricingClientProps)
           </motion.div>
 
           {/* Toggle Mensal/Anual */}
-          <motion.div
+            <motion.div
             initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
             className="flex items-center justify-center gap-4 mb-12"
           >
             <span className={`text-sm ${!isAnnual ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-500 dark:text-gray-400'}`}>
@@ -192,8 +192,8 @@ export default function PricingClient({ userPlan = 'free' }: PricingClientProps)
               >
                 Economize até 25%
               </motion.span>
-            )}
-          </motion.div>
+              )}
+            </motion.div>
 
           {/* Cards de preço */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mb-12">
@@ -203,10 +203,10 @@ export default function PricingClient({ userPlan = 'free' }: PricingClientProps)
               const isDisabled = isCurrentPlan || (isPaidPlan && isLoading !== null)
 
               return (
-                <motion.div
+            <motion.div
                   key={plan.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   whileHover={!isDisabled ? { y: -8, scale: plan.popular ? 1.05 : 1.02 } : {}}
                   className={`relative rounded-2xl border-2 p-8 flex flex-col ${
@@ -329,8 +329,8 @@ export default function PricingClient({ userPlan = 'free' }: PricingClientProps)
                           </svg>
                           <span className="text-sm font-medium text-red-700 dark:text-red-400">
                             mensagens ilimitadas
-                          </span>
-                        </div>
+                </span>
+              </div>
                       </div>
                     </div>
                   )}
@@ -358,8 +358,8 @@ export default function PricingClient({ userPlan = 'free' }: PricingClientProps)
                         <span className="text-sm font-medium text-red-700 dark:text-red-400">
                           não inclui voz
                         </span>
-                      </div>
-                    </div>
+                </div>
+              </div>
                   )}
 
                   {/* Seção "está incluso" - para Pro (tudo verde) */}
@@ -442,14 +442,14 @@ export default function PricingClient({ userPlan = 'free' }: PricingClientProps)
                           </span>
                         </div>
                       </div>
-                    </div>
+              </div>
                   )}
 
                   {isCurrentPlan ? (
                     <div className="w-full py-3 border border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 rounded-full font-light text-center cursor-not-allowed">
                       seu plano atual
-                    </div>
-                  ) : (
+                </div>
+              ) : (
                     <motion.button
                       onClick={() => handlePlanClick(plan.id)}
                       disabled={isDisabled}
@@ -465,8 +465,8 @@ export default function PricingClient({ userPlan = 'free' }: PricingClientProps)
                         ? 'processando...' 
                         : plan.cta}
                     </motion.button>
-                  )}
-                </motion.div>
+              )}
+            </motion.div>
               )
             })}
           </div>
