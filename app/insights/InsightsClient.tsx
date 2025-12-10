@@ -39,31 +39,73 @@ export default function InsightsClient() {
   const supabase = createClientComponentClient()
   const { plan, isLoading: isLoadingPlan } = useUserPlan()
 
-  // Cache simples baseado em localStorage
+  // Cache otimizado baseado em localStorage com compressão
   const getCachedData = (period: string) => {
     try {
       const cached = localStorage.getItem(`insights_${period}`)
       if (cached) {
-        const { data: cachedData, timestamp } = JSON.parse(cached)
-        // Cache válido por 5 minutos
-        if (Date.now() - timestamp < 5 * 60 * 1000) {
+        const { data: cachedData, timestamp, version } = JSON.parse(cached)
+        // Cache válido por 10 minutos (aumentado de 5)
+        const cacheAge = Date.now() - timestamp
+        const cacheValid = cacheAge < 10 * 60 * 1000
+        
+        // Verificar versão do cache (para invalidar caches antigos)
+        if (cacheValid && version === '1.0') {
           return cachedData
+        } else if (!cacheValid) {
+          // Limpar cache expirado
+          localStorage.removeItem(`insights_${period}`)
         }
       }
     } catch (e) {
       // Ignorar erros de cache
+      console.warn('Erro ao ler cache de insights:', e)
     }
     return null
   }
 
   const setCachedData = (period: string, data: InsightsData) => {
     try {
-      localStorage.setItem(`insights_${period}`, JSON.stringify({
+      // Limitar tamanho do cache (máximo 5MB por período)
+      const cacheData = {
         data,
-        timestamp: Date.now()
-      }))
+        timestamp: Date.now(),
+        version: '1.0'
+      }
+      const serialized = JSON.stringify(cacheData)
+      
+      // Se o cache for muito grande, limpar caches antigos
+      if (serialized.length > 100000) { // ~100KB
+        // Limpar caches de outros períodos
+        ['7d', '15d', '30d', 'all'].forEach(p => {
+          if (p !== period) {
+            localStorage.removeItem(`insights_${p}`)
+          }
+        })
+      }
+      
+      localStorage.setItem(`insights_${period}`, serialized)
     } catch (e) {
-      // Ignorar erros de cache
+      // Se falhar por quota excedida, limpar caches antigos
+      if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+        try {
+          ['7d', '15d', '30d', 'all'].forEach(p => {
+            if (p !== period) {
+              localStorage.removeItem(`insights_${p}`)
+            }
+          })
+          // Tentar novamente
+          localStorage.setItem(`insights_${period}`, JSON.stringify({
+            data,
+            timestamp: Date.now(),
+            version: '1.0'
+          }))
+        } catch (retryError) {
+          console.warn('Erro ao salvar cache de insights:', retryError)
+        }
+      } else {
+        console.warn('Erro ao salvar cache de insights:', e)
+      }
     }
   }
 

@@ -43,6 +43,7 @@ export default function PricingClient({ userPlan = 'free' }: PricingClientProps)
       features: [
         'mensagens ilimitadas',
         'insights ilimitados',
+        'conexão com Spotify',
         'memória de longo prazo',
         'análise de sentimentos',
         'journal completo',

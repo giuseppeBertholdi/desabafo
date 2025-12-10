@@ -1792,6 +1792,9 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                     placeholder="escreva sua mensagem..."
                     disabled={isLoading || isSending}
                     rows={1}
+                    aria-label="Campo de mensagem"
+                    aria-describedby="chat-input-help"
+                    aria-required="true"
                     style={{
                       resize: 'none',
                       overflow: 'hidden',
@@ -1807,8 +1810,9 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                     whileHover={!isLoading && !isSending && input.trim() ? { scale: 1.08 } : {}}
                     whileTap={!isLoading && !isSending && input.trim() ? { scale: 0.92 } : {}}
                     transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-                    className="absolute right-1.5 sm:right-2 md:right-2.5 bottom-1.5 sm:bottom-2 md:bottom-2.5 w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 hover:from-pink-500 hover:to-pink-700 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer shadow-sm hover:shadow-md flex-shrink-0"
+                    aria-label="Enviar mensagem"
                     type="button"
+                    className="absolute right-1.5 sm:right-2 md:right-2.5 bottom-1.5 sm:bottom-2 md:bottom-2.5 w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 hover:from-pink-500 hover:to-pink-700 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer shadow-sm hover:shadow-md flex-shrink-0"
                   >
                     <svg className="w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />

@@ -3,6 +3,8 @@ import Script from 'next/script'
 import './globals.css'
 import ThemeProvider from '@/components/ThemeProvider'
 import { ToastProvider } from '@/contexts/ToastContext'
+import AccessibilityControls from '@/components/AccessibilityControls'
+import KeyboardShortcuts from '@/components/KeyboardShortcuts'
 
 export const metadata: Metadata = {
   title: 'desabafo.io - sua IA terapeuta',
@@ -37,7 +39,9 @@ export default function RootLayout({
       <body>
         <ThemeProvider>
           <ToastProvider>
+            <KeyboardShortcuts />
             {children}
+            <AccessibilityControls />
           </ToastProvider>
         </ThemeProvider>
       </body>

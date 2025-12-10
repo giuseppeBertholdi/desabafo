@@ -715,6 +715,9 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
                 setShowHelp(false)
               }
             }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="help-title"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -722,16 +725,20 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.3 }}
               className="bg-white dark:bg-gray-800 rounded-3xl p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl transition-colors"
+              data-modal="true"
             >
               <div className="flex items-center justify-between mb-8">
-                <h2 className="text-3xl font-light text-gray-900 dark:text-white">
+                <h2 id="help-title" className="text-3xl font-light text-gray-900 dark:text-white">
                   como usar o desabafo.io
                 </h2>
                 <button
                   onClick={() => setShowHelp(false)}
                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                  aria-label="Fechar ajuda"
+                  data-close-modal
+                  type="button"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -1034,9 +1041,13 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.3 }}
               className="bg-white dark:bg-gray-800 rounded-3xl p-8 max-w-2xl w-full shadow-2xl transition-colors"
+              data-modal="true"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="feedback-title"
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-3xl font-light text-gray-900 dark:text-white">
+                <h2 id="feedback-title" className="text-3xl font-light text-gray-900 dark:text-white">
                   como o desabafo.io pode melhorar?
                 </h2>
                 <button
@@ -1045,8 +1056,11 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
                     setFeedbackText('')
                   }}
                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                  aria-label="Fechar feedback"
+                  data-close-modal
+                  type="button"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -1062,6 +1076,8 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
                   placeholder="escreva seu feedback aqui..."
                   className="w-full h-48 px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-2xl text-gray-900 dark:text-white bg-white dark:bg-gray-800 font-light placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-pink-500 transition-colors resize-none"
                   disabled={isSubmittingFeedback}
+                  aria-label="Campo de feedback"
+                  aria-required="false"
                 />
               </div>
 

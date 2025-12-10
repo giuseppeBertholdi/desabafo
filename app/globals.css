@@ -46,6 +46,68 @@ h1, h2, h3, h4, h5, h6 {
     border-radius: 4px;
   }
   
+  /* Acessibilidade - Tamanho de fonte */
+  [data-font-size="small"] {
+    font-size: 14px;
+  }
+  
+  [data-font-size="small"] h1 { font-size: 2rem; }
+  [data-font-size="small"] h2 { font-size: 1.5rem; }
+  [data-font-size="small"] h3 { font-size: 1.25rem; }
+  
+  [data-font-size="medium"] {
+    font-size: 16px;
+  }
+  
+  [data-font-size="large"] {
+    font-size: 18px;
+  }
+  
+  [data-font-size="large"] h1 { font-size: 3.5rem; }
+  [data-font-size="large"] h2 { font-size: 2.5rem; }
+  [data-font-size="large"] h3 { font-size: 2rem; }
+  
+  /* Acessibilidade - Alto contraste */
+  [data-high-contrast="true"] {
+    --background: #ffffff;
+    --foreground: #000000;
+  }
+  
+  [data-high-contrast="true"].dark {
+    --background: #000000;
+    --foreground: #ffffff;
+  }
+  
+  [data-high-contrast="true"] * {
+    border-color: currentColor !important;
+  }
+  
+  [data-high-contrast="true"] button,
+  [data-high-contrast="true"] a {
+    border: 2px solid currentColor !important;
+  }
+  
+  /* Acessibilidade - Reduzir animações */
+  [data-reduced-motion="true"] *,
+  [data-reduced-motion="true"] *::before,
+  [data-reduced-motion="true"] *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+  
   /* Performance optimizations */
   * {
     -webkit-font-smoothing: antialiased;

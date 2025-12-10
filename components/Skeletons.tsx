@@ -2,20 +2,24 @@
 
 import { motion } from 'framer-motion'
 
-// Skeleton base com animação de shimmer
+// Skeleton base com animação de shimmer otimizada
 const Shimmer = () => (
-  <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+  <div 
+    className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent"
+    aria-hidden="true"
+  />
 )
 
 // Skeleton para mensagens de chat
 export function ChatMessageSkeleton() {
   return (
-    <div className="flex items-start gap-3 animate-pulse">
-      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
-      <div className="flex-1 space-y-2">
+    <div className="flex items-start gap-3 animate-pulse" role="status" aria-label="Carregando mensagem">
+      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gray-200 dark:bg-gray-700 flex-shrink-0" aria-hidden="true" />
+      <div className="flex-1 space-y-2" aria-hidden="true">
         <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
         <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
       </div>
+      <span className="sr-only">Carregando mensagem...</span>
     </div>
   )
 }
