@@ -1347,15 +1347,12 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 relative transition-colors">
-      {/* Banner Experimentar Pro */}
-      <ProBanner />
-      
       {/* Logo desabafo no topo - Minimalista */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="fixed top-6 left-16 md:left-4 lg:left-6 z-10 flex items-center"
+        className="fixed top-6 left-16 md:left-4 lg:left-6 z-[70] flex items-center"
       >
         <button
           onClick={() => router.push('/home')}
@@ -1382,9 +1379,22 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
         </motion.div>
       )}
 
-      {/* Switches no canto superior direito - Ocultar no modo voz */}
-      {!voiceMode && (
-        <div className="fixed top-20 sm:top-20 md:top-24 right-2 sm:right-4 md:right-6 flex flex-col items-end gap-1.5 sm:gap-2.5 z-10">
+      {/* Botões fixos no topo direito - Alinhados verticalmente */}
+      <div className="fixed top-4 sm:top-6 right-4 sm:right-6 z-[70] flex flex-col items-end gap-2">
+        {/* Banner Experimentar Pro (apenas para plano free) */}
+        {plan === 'free' && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ProBanner />
+          </motion.div>
+        )}
+
+        {/* Switches no canto superior direito - Ocultar no modo voz */}
+        {!voiceMode && (
+          <div className="flex flex-col items-end gap-1.5 sm:gap-2.5">
           {/* Modo Melhor Amigo */}
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
@@ -1458,8 +1468,9 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
               terminar
             </motion.button>
           )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       {/* Chat Container - Estilo Calm */}
       <div className="flex items-end justify-center min-h-screen px-3 sm:px-4 md:px-6 pb-20 sm:pb-24 md:pb-32 bg-gradient-to-b from-transparent via-slate-50/30 to-slate-50/50 dark:via-slate-900/20 dark:to-slate-900/40">

@@ -7,6 +7,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import Sidebar from '@/components/Sidebar'
 import { useUserPlan } from '@/lib/getUserPlanClient'
 import MessageUsageBar from '@/components/MessageUsageBar'
+import AccessibilityControls from '@/components/AccessibilityControls'
 
 export default function AccountClient() {
   const [user, setUser] = useState<any>(null)
@@ -1064,6 +1065,9 @@ export default function AccountClient() {
           </motion.div>
         </div>
       )}
+
+      {/* Controles de Acessibilidade */}
+      <AccessibilityControls />
     </div>
   )
 }
