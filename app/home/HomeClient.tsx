@@ -23,8 +23,6 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false)
   const [spotifyTrack, setSpotifyTrack] = useState<any>(null)
   const [showSpotifyWidget, setShowSpotifyWidget] = useState(false)
-  const [showSpotifyPopup, setShowSpotifyPopup] = useState(false)
-  const [spotifyPopupDismissed, setSpotifyPopupDismissed] = useState(false)
   const [isSpotifyConnected, setIsSpotifyConnected] = useState(false)
   const router = useRouter()
   const supabase = createClientComponentClient()
@@ -65,11 +63,6 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
     const savedMode = localStorage.getItem('bestFriendMode')
     if (savedMode !== null) {
       setBestFriendMode(savedMode === 'true')
-    }
-    
-    const spotifyDismissed = localStorage.getItem('spotifyPopupDismissed')
-    if (spotifyDismissed === 'true') {
-      setSpotifyPopupDismissed(true)
     }
     
     setMounted(true)
@@ -123,80 +116,11 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
         if (data.isPlaying && data.track) {
           setSpotifyTrack(data.track)
           setShowSpotifyWidget(true)
-        } else {
-          // Está conectado mas não está tocando música
-          // Para Free: sempre mostrar popup (se não foi dispensado)
-          // Para Essential e Pro: não mostrar se já está conectado
-          if (plan === 'free' && !spotifyPopupDismissed) {
-            setTimeout(() => setShowSpotifyPopup(true), 3000)
-          }
-        }
-      } else if (response.status === 401) {
-        // Não está conectado
-        // Para Free: sempre mostrar (se não foi dispensado)
-        // Para Essential e Pro: verificar se não está conectado antes de mostrar
-        if (plan === 'free' && !spotifyPopupDismissed) {
-          setTimeout(() => setShowSpotifyPopup(true), 3000)
-        } else if ((plan === 'essential' || plan === 'pro') && !spotifyPopupDismissed) {
-          // Verificar novamente se não está conectado antes de mostrar
-          setTimeout(async () => {
-            const { data: { session } } = await supabase.auth.getSession()
-            if (!session) return
-
-            const { data: profile } = await supabase
-              .from('user_profiles')
-              .select('spotify_access_token')
-              .eq('user_id', session.user.id)
-              .maybeSingle()
-
-            const connected = !!profile?.spotify_access_token
-            if (!connected) {
-              setShowSpotifyPopup(true)
-            }
-          }, 3000)
         }
       }
     } catch (error) {
-      // Erro ao buscar
-      // Para Free: sempre mostrar (se não foi dispensado)
-      // Para Essential e Pro: verificar se não está conectado antes de mostrar
-      if (plan === 'free' && !spotifyPopupDismissed) {
-        setTimeout(() => setShowSpotifyPopup(true), 3000)
-      } else if ((plan === 'essential' || plan === 'pro') && !spotifyPopupDismissed) {
-        // Verificar novamente se não está conectado antes de mostrar
-        setTimeout(async () => {
-          const { data: { session } } = await supabase.auth.getSession()
-          if (!session) return
-
-          const { data: profile } = await supabase
-            .from('user_profiles')
-            .select('spotify_access_token')
-            .eq('user_id', session.user.id)
-            .maybeSingle()
-
-          const connected = !!profile?.spotify_access_token
-          if (!connected) {
-            setShowSpotifyPopup(true)
-          }
-        }, 3000)
-      }
+      // Silenciosamente falhar
     }
-  }
-
-  const handleConnectSpotify = () => {
-    if (plan === 'free') {
-      // Plano free: redirecionar para preços
-      router.push('/pricing')
-    } else {
-      // Pro ou Essential: ir para account para conectar
-      router.push('/account')
-    }
-  }
-
-  const dismissSpotifyPopup = () => {
-    setShowSpotifyPopup(false)
-    setSpotifyPopupDismissed(true)
-    localStorage.setItem('spotifyPopupDismissed', 'true')
   }
 
   // Atualizar saudação quando o modo melhor amigo mudar ou após montagem
@@ -280,18 +204,25 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
         </button>
       </motion.div>
 
-      {/* Botão Upgrade to Pro no topo direito */}
-      <div className="fixed top-4 sm:top-6 right-4 sm:right-6 z-[70]">
-        <ProBanner />
-      </div>
+      {/* Botões fixos no topo direito - Alinhados verticalmente */}
+      <div className="fixed top-4 sm:top-6 right-4 sm:right-6 z-[70] flex flex-col items-end gap-2">
+        {/* Botão Upgrade to Pro (apenas para grátis) */}
+        {plan === 'free' && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ProBanner />
+          </motion.div>
+        )}
 
-      {/* Switch Modo Melhor Amigo abaixo do upgrade */}
-      <div className={`fixed ${plan === 'free' ? 'top-14 sm:top-16' : 'top-14 sm:top-16'} right-4 sm:right-6 z-[70]`}>
-        {/* Modo Melhor Amigo */}
+        {/* Switch Modo Melhor Amigo */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="flex items-center gap-2 sm:gap-2.5 px-2.5 sm:px-3.5 py-1.5 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm"
+          transition={{ duration: 0.3, delay: 0.05 }}
+          className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm"
         >
           <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 font-light whitespace-nowrap">melhor amigo</span>
           <button
@@ -308,21 +239,19 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
             />
           </button>
         </motion.div>
-      </div>
 
-      {/* Botão Spotify abaixo do melhor amigo */}
-      <div className={`fixed ${plan === 'free' ? 'top-24 sm:top-28' : 'top-24 sm:top-28'} right-4 sm:right-6 z-[70]`}>
+        {/* Botão Spotify */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
         >
           {plan === 'free' ? (
             <button
               onClick={() => router.push('/pricing')}
-              className="flex items-center gap-2 px-3 sm:px-4 py-1.5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-full border border-green-600 shadow-sm transition-all"
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-full border border-green-600 shadow-sm transition-all"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
               </svg>
               <span className="text-[10px] sm:text-xs font-light whitespace-nowrap">ver planos</span>
@@ -353,9 +282,9 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
                   alert('Erro ao desconectar Spotify')
                 }
               }}
-              className="flex items-center gap-2 px-3 sm:px-4 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full border border-red-600 shadow-sm transition-all"
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full border border-red-600 shadow-sm transition-all"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
               </svg>
               <span className="text-[10px] sm:text-xs font-light whitespace-nowrap">desconectar</span>
@@ -363,9 +292,9 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
           ) : (
             <button
               onClick={() => router.push('/account')}
-              className="flex items-center gap-2 px-3 sm:px-4 py-1.5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-full border border-green-600 shadow-sm transition-all"
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-full border border-green-600 shadow-sm transition-all"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
               </svg>
               <span className="text-[10px] sm:text-xs font-light whitespace-nowrap">conectar</span>
@@ -1162,60 +1091,6 @@ export default function HomeClient({ firstName, userEmail }: HomeClientProps) {
         )}
       </AnimatePresence>
 
-      {/* Popup Spotify */}
-      <AnimatePresence>
-        {showSpotifyPopup && !showSpotifyWidget && (
-          <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 50, scale: 0.9 }}
-            transition={{ type: "spring", duration: 0.5 }}
-            className={`fixed bottom-6 right-6 z-[90] ${plan === 'free' ? 'max-w-xs' : 'max-w-sm'}`}
-          >
-            <div className={`bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/40 dark:to-emerald-900/40 rounded-2xl shadow-2xl border-2 border-green-500/40 dark:border-green-600/40 backdrop-blur-lg ${plan === 'free' ? 'p-4' : 'p-6'}`}>
-              {/* Botão fechar - apenas para Essential e Pro */}
-              {(plan === 'essential' || plan === 'pro') && (
-                <button
-                  onClick={dismissSpotifyPopup}
-                  className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
-
-              <div className={`flex items-start gap-3 ${plan === 'free' ? 'mb-3' : 'mb-4'}`}>
-                <div className="flex-shrink-0">
-                  <svg className={`text-green-600 dark:text-green-500 ${plan === 'free' ? 'w-8 h-8' : 'w-12 h-12'}`} viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h3 className={`font-medium text-gray-900 dark:text-white ${plan === 'free' ? 'text-sm mb-1' : 'text-lg mb-2'}`}>
-                    conectar Spotify
-                  </h3>
-                  <p className={`text-gray-600 dark:text-gray-400 font-light leading-relaxed ${plan === 'free' ? 'text-xs' : 'text-sm'}`}>
-                    {plan === 'free' 
-                      ? 'disponível nos planos Essential e Pro!'
-                      : 'conecte sua conta Spotify para a IA entender melhor sua vibe através das músicas que você está ouvindo'}
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={handleConnectSpotify}
-                className={`w-full bg-green-600 hover:bg-green-700 text-white rounded-xl font-light transition-all flex items-center justify-center gap-2 shadow-lg ${plan === 'free' ? 'px-4 py-2 text-xs' : 'px-6 py-3'}`}
-              >
-                <svg className={plan === 'free' ? 'w-4 h-4' : 'w-5 h-5'} viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
-                </svg>
-                {plan === 'free' ? 'ver planos' : 'conectar agora'}
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   )
 }
