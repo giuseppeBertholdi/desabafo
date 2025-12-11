@@ -104,7 +104,7 @@ export default function Sidebar() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed top-6 left-4 z-[60] w-10 h-10 flex flex-col items-center justify-center gap-1.5 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all"
+        className="md:hidden fixed top-6 left-4 z-[80] w-10 h-10 flex flex-col items-center justify-center gap-1.5 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all"
         type="button"
         aria-label="Menu"
       >
@@ -140,7 +140,7 @@ export default function Sidebar() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={() => setIsOpen(false)}
-            className="md:hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-[55]"
+            className="md:hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-[75]"
           />
         )}
       </AnimatePresence>
@@ -153,7 +153,7 @@ export default function Sidebar() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -300, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="md:hidden fixed left-0 top-0 bottom-0 w-72 bg-white dark:bg-gray-900 z-[60] shadow-2xl overflow-y-auto"
+            className="md:hidden fixed left-0 top-0 bottom-0 w-72 bg-white dark:bg-gray-900 z-[80] shadow-2xl overflow-y-auto"
           >
             <div className="p-6">
               <div className="mb-8 mt-2">

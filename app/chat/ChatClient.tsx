@@ -362,7 +362,7 @@ const temasMap: Record<string, { emoji: string; nome: string; mensagemInicial: s
 
 interface Message {
   id: string
-  role: 'user' | 'assistant'
+  role: 'user' | 'assistant' | 'system'
   content: string
   timestamp: Date
   isEmergency?: boolean
@@ -465,6 +465,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
   const [isProcessingAudio, setIsProcessingAudio] = useState(false)
   const [isPlayingAudio, setIsPlayingAudio] = useState(false)
   const [userAvatar, setUserAvatar] = useState<string | null>(null)
+  const [avatarError, setAvatarError] = useState(false)
   const [showEmojiAnimation, setShowEmojiAnimation] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -504,6 +505,15 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
         const userMessagesCount = messages.filter(m => m.role === 'user').length + 1
         
         if (!temporaryChat && !currentSessionId && userMessagesCount === 1) {
+          // Adicionar mensagem de início de sessão imediatamente
+          const sessionStartMessage: Message = {
+            id: `session-start-${Date.now()}`,
+            role: 'system',
+            content: 'sessão iniciada',
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, sessionStartMessage])
+          
           try {
             const sessionResponse = await fetch('/api/sessions', {
               method: 'POST',
@@ -519,9 +529,25 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
               const { sessionId: newSessionId } = await sessionResponse.json()
               currentSessionId = newSessionId
               setSessionId(newSessionId)
+              localStorage.setItem('pendingSessionId', newSessionId)
+            } else {
+              // Se falhar, salvar para tentar depois
+              const pendingSession = {
+                firstMessage: transcription,
+                tema: tema || null,
+                timestamp: Date.now()
+              }
+              localStorage.setItem('pendingSession', JSON.stringify(pendingSession))
             }
           } catch (err) {
             console.error('Erro ao criar sessão:', err)
+            // Salvar para tentar depois
+            const pendingSession = {
+              firstMessage: transcription,
+              tema: tema || null,
+              timestamp: Date.now()
+            }
+            localStorage.setItem('pendingSession', JSON.stringify(pendingSession))
           }
         }
         
@@ -613,6 +639,9 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
+        // Resetar erro ao recarregar
+        setAvatarError(false)
+        
         // Tentar pegar avatar do Google
         const avatarUrl = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture
         if (avatarUrl) {
@@ -734,15 +763,116 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
 
   // Função para terminar conversa temporária
   const handleEndTemporaryChat = () => {
-    setMessages([{
-      id: '1',
-      role: 'assistant',
-      content: getInitialMessage(),
-      timestamp: new Date()
-    }])
-    setSessionId(null)
-    setInput('')
+    // Adicionar mensagem de fim de sessão antes de limpar
+    if (sessionId) {
+      const sessionEndMessage: Message = {
+        id: `session-end-${Date.now()}`,
+        role: 'system',
+        content: 'sessão encerrada',
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, sessionEndMessage])
+      
+      // Limpar localStorage
+      localStorage.removeItem('pendingSession')
+      localStorage.removeItem('pendingSessionId')
+    }
+    
+    setTimeout(() => {
+      setMessages([{
+        id: '1',
+        role: 'assistant',
+        content: getInitialMessage(),
+        timestamp: new Date()
+      }])
+      setSessionId(null)
+      setInput('')
+    }, 500)
   }
+  
+  // Sincronizar sessão pendente e uso de voz quando a conexão voltar
+  useEffect(() => {
+    const syncPendingSession = async () => {
+      const pendingSessionStr = localStorage.getItem('pendingSession')
+      const pendingSessionId = localStorage.getItem('pendingSessionId')
+      
+      if (pendingSessionStr && !sessionId) {
+        try {
+          const pendingSession = JSON.parse(pendingSessionStr)
+          
+          // Tentar criar sessão novamente
+          const sessionResponse = await fetch('/api/sessions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              firstMessage: pendingSession.firstMessage,
+              tema: pendingSession.tema || null,
+              skipSummary: true
+            })
+          })
+          
+          if (sessionResponse.ok) {
+            const { sessionId: newSessionId } = await sessionResponse.json()
+            setSessionId(newSessionId)
+            localStorage.removeItem('pendingSession')
+            localStorage.setItem('pendingSessionId', newSessionId)
+            showSuccess('Sessão sincronizada com sucesso!')
+          }
+        } catch (error) {
+          console.error('Erro ao sincronizar sessão pendente:', error)
+        }
+      }
+    }
+    
+    const syncPendingVoiceUsage = async () => {
+      const pendingUsageStr = localStorage.getItem('pendingVoiceUsage')
+      
+      if (pendingUsageStr) {
+        try {
+          const pendingUsage = JSON.parse(pendingUsageStr)
+          
+          // Sincronizar todos os usos pendentes
+          for (const usage of pendingUsage) {
+            try {
+              await recordVoiceUsage(usage.minutes)
+            } catch (error) {
+              console.error('Erro ao sincronizar uso de voz:', error)
+              // Se falhar, manter no array para tentar depois
+              continue
+            }
+          }
+          
+          // Se todos foram sincronizados, limpar
+          localStorage.removeItem('pendingVoiceUsage')
+          if (pendingUsage.length > 0) {
+            showSuccess('Uso de voz sincronizado!')
+          }
+        } catch (error) {
+          console.error('Erro ao processar uso de voz pendente:', error)
+        }
+      }
+    }
+    
+    // Verificar conexão e sincronizar
+    const handleOnline = () => {
+      syncPendingSession()
+      syncPendingVoiceUsage()
+    }
+    
+    window.addEventListener('online', handleOnline)
+    
+    // Tentar sincronizar imediatamente se já estiver online
+    if (navigator.onLine) {
+      syncPendingSession()
+      syncPendingVoiceUsage()
+    }
+    
+    return () => {
+      window.removeEventListener('online', handleOnline)
+    }
+  }, [sessionId, recordVoiceUsage, showSuccess])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -791,10 +921,29 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
       // Usar Realtime Mini para usuários Pro
       interruptAudio()
       setIsProcessingAudio(true)
-      await realtimeSession.startSession()
       
-      // Marcar início da sessão
-      voiceSessionStartTime.current = Date.now()
+      // Adicionar mensagem de início de sessão de voz (antes de iniciar, para garantir que aparece)
+      const sessionStartMessage: Message = {
+        id: `voice-session-start-${Date.now()}`,
+        role: 'system',
+        content: 'sessão de voz iniciada',
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, sessionStartMessage])
+      
+      try {
+        await realtimeSession.startSession()
+        
+        // Marcar início da sessão
+        voiceSessionStartTime.current = Date.now()
+      } catch (error) {
+        console.error('Erro ao iniciar sessão de voz:', error)
+        showError('Erro ao iniciar sessão de voz. Verifique sua conexão.')
+        setIsProcessingAudio(false)
+        setIsRecording(false)
+        // Remover mensagem de início se falhar completamente
+        setMessages(prev => prev.filter(m => m.id !== sessionStartMessage.id))
+      }
       
       // Iniciar timer para registrar uso a cada minuto
       voiceUsageTimerRef.current = setInterval(() => {
@@ -822,14 +971,33 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
       realtimeSession.stopSession()
       setIsRecording(false)
       
-      // Registrar tempo final
+      // Adicionar mensagem de fim de sessão de voz (sempre, mesmo se offline)
+      const sessionEndMessage: Message = {
+        id: `voice-session-end-${Date.now()}`,
+        role: 'system',
+        content: 'sessão de voz encerrada',
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, sessionEndMessage])
+      
+      // Registrar tempo final (pode falhar se offline, mas tenta)
       if (voiceSessionStartTime.current) {
         const elapsedMs = Date.now() - voiceSessionStartTime.current
         const elapsedMinutes = elapsedMs / (1000 * 60)
         
         // Registrar minutos restantes se >= 0.1 minuto (6 segundos)
         if (elapsedMinutes >= 0.1) {
-          recordVoiceUsage(Number(elapsedMinutes.toFixed(2)))
+          recordVoiceUsage(Number(elapsedMinutes.toFixed(2))).catch(err => {
+            console.error('Erro ao registrar uso de voz (pode estar offline):', err)
+            // Salvar para tentar depois
+            const pendingUsage = {
+              minutes: Number(elapsedMinutes.toFixed(2)),
+              timestamp: Date.now()
+            }
+            const existing = JSON.parse(localStorage.getItem('pendingVoiceUsage') || '[]')
+            existing.push(pendingUsage)
+            localStorage.setItem('pendingVoiceUsage', JSON.stringify(existing))
+          })
         }
         
         voiceSessionStartTime.current = null
@@ -862,22 +1030,51 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
       const userMessagesCount = messages.filter(m => m.role === 'user').length + 1
       
       if (!temporaryChat && !currentSessionId && userMessagesCount === 1) {
-        const sessionResponse = await fetch('/api/sessions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+        // Adicionar mensagem de início de sessão imediatamente
+        const sessionStartMessage: Message = {
+          id: `session-start-${Date.now()}`,
+          role: 'system',
+          content: 'sessão iniciada',
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, sessionStartMessage])
+        
+        try {
+          const sessionResponse = await fetch('/api/sessions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              firstMessage: transcription,
+              tema: tema || null,
+              skipSummary: true
+            })
+          })
+          
+          if (sessionResponse.ok) {
+            const { sessionId: newSessionId } = await sessionResponse.json()
+            currentSessionId = newSessionId
+            setSessionId(newSessionId)
+            localStorage.setItem('pendingSessionId', newSessionId)
+          } else {
+            // Se falhar, salvar para tentar depois
+            const pendingSession = {
+              firstMessage: transcription,
+              tema: tema || null,
+              timestamp: Date.now()
+            }
+            localStorage.setItem('pendingSession', JSON.stringify(pendingSession))
+          }
+        } catch (error) {
+          console.error('Erro ao criar sessão:', error)
+          // Salvar para tentar depois
+          const pendingSession = {
             firstMessage: transcription,
             tema: tema || null,
-            skipSummary: true
-          })
-        })
-        
-        if (sessionResponse.ok) {
-          const { sessionId: newSessionId } = await sessionResponse.json()
-          currentSessionId = newSessionId
-          setSessionId(newSessionId)
+            timestamp: Date.now()
+          }
+          localStorage.setItem('pendingSession', JSON.stringify(pendingSession))
         }
       }
 
@@ -1120,24 +1317,55 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
       const userMessagesCount = messages.filter(m => m.role === 'user').length + 1
       
       if (!temporaryChat && !currentSessionId && userMessagesCount === 1) {
-        // Na primeira mensagem, criar sessão sem resumo
-        const sessionResponse = await fetch('/api/sessions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+        // Adicionar mensagem de início de sessão imediatamente (antes da requisição)
+        const sessionStartMessage: Message = {
+          id: `session-start-${Date.now()}`,
+          role: 'system',
+          content: 'sessão iniciada',
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, sessionStartMessage])
+        
+        // Tentar criar sessão no servidor (pode falhar se offline)
+        try {
+          const sessionResponse = await fetch('/api/sessions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              firstMessage: messageContent,
+              tema: tema || null,
+              skipSummary: true // Sempre pular resumo na primeira mensagem
+            })
+          })
+          
+          if (sessionResponse.ok) {
+            const { sessionId: newSessionId } = await sessionResponse.json()
+            currentSessionId = newSessionId
+            setSessionId(newSessionId)
+            
+            // Salvar sessionId no localStorage como backup
+            localStorage.setItem('pendingSessionId', newSessionId)
+          } else {
+            // Se falhar, salvar no localStorage para tentar depois
+            const pendingSession = {
+              firstMessage: messageContent,
+              tema: tema || null,
+              timestamp: Date.now()
+            }
+            localStorage.setItem('pendingSession', JSON.stringify(pendingSession))
+            showInfo('Sessão iniciada offline. Será sincronizada quando a conexão voltar.')
+          }
+        } catch (error) {
+          // Erro de rede - salvar para tentar depois
+          const pendingSession = {
             firstMessage: messageContent,
             tema: tema || null,
-            skipSummary: true // Sempre pular resumo na primeira mensagem
-          })
-        })
-        
-        if (sessionResponse.ok) {
-          const { sessionId: newSessionId } = await sessionResponse.json()
-          currentSessionId = newSessionId
-          setSessionId(newSessionId)
-          
+            timestamp: Date.now()
+          }
+          localStorage.setItem('pendingSession', JSON.stringify(pendingSession))
+          showInfo('Sessão iniciada offline. Será sincronizada quando a conexão voltar.')
         }
       }
 
@@ -1493,22 +1721,56 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                     stiffness: 300,
                     damping: 25
                   }}
-                  className={`flex items-start gap-2 sm:gap-3 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+                  className={`flex items-start gap-2 sm:gap-3 ${
+                    message.role === 'system' 
+                      ? 'justify-center' 
+                      : message.role === 'user' 
+                        ? 'flex-row-reverse' 
+                        : 'flex-row'
+                  }`}
                 >
+                  {/* Mensagem de sistema - renderização especial */}
+                  {message.role === 'system' ? (
+                    <div className="w-full flex justify-center">
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700"
+                      >
+                        <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-light">
+                          {message.content}
+                        </span>
+                      </motion.div>
+                    </div>
+                  ) : (
+                    <>
                   {/* Avatar - Cores mais escuras */}
                   {message.role === 'assistant' ? (
                     <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 flex-shrink-0 flex items-center justify-center">
                       <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 shadow-md shadow-pink-200/30 dark:shadow-pink-900/20" />
                     </div>
                   ) : (
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full flex-shrink-0 overflow-hidden bg-gray-300 dark:bg-gray-600 flex items-center justify-center shadow-sm">
-                      <svg 
-                        className="w-full h-full text-gray-500 dark:text-gray-400" 
-                        fill="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                      </svg>
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full flex-shrink-0 overflow-hidden bg-gray-300 dark:bg-gray-600 flex items-center justify-center shadow-sm border-2 border-gray-200 dark:border-gray-700">
+                      {userAvatar && !userAvatar.startsWith('initials:') && !avatarError ? (
+                        <img 
+                          src={userAvatar} 
+                          alt="Avatar do usuário" 
+                          className="w-full h-full object-cover"
+                          onError={() => setAvatarError(true)}
+                        />
+                      ) : userAvatar && userAvatar.startsWith('initials:') ? (
+                        <span className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300">
+                          {userAvatar.replace('initials:', '')}
+                        </span>
+                      ) : (
+                        <svg 
+                          className="w-full h-full text-gray-500 dark:text-gray-400" 
+                          fill="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                        </svg>
+                      )}
                     </div>
                   )}
                   
@@ -1566,6 +1828,8 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                       />
                     )}
                   </div>
+                    </>
+                  )}
                 </motion.div>
               ))}
             </AnimatePresence>
