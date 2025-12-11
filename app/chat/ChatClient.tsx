@@ -10,10 +10,10 @@ import ProBanner from '@/components/ProBanner'
 import { ChatMessagesSkeleton } from '@/components/Skeletons'
 import { useUserPlan } from '@/lib/getUserPlanClient'
 import { useRealtimeMini } from '@/hooks/useRealtimeMini'
-import { useVoiceTranscription } from '@/hooks/useVoiceTranscription'
 import { useToast } from '@/contexts/ToastContext'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
 import VoiceUsageBar from '@/components/VoiceUsageBar'
+import VoiceChat from '@/components/VoiceChat'
 
 interface ChatClientProps {
   firstName: string
@@ -367,7 +367,6 @@ interface Message {
   content: string
   timestamp: Date
   isEmergency?: boolean
-  isInterim?: boolean // Para transcrições parciais
 }
 
 export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMode = false }: ChatClientProps) {
@@ -484,44 +483,14 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
   const voiceSessionStartTime = useRef<number | null>(null)
   const voiceUsageTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Hook para transcrição de voz usando Web Speech API (gratuito)
-  const voiceTranscription = useVoiceTranscription({
-    onTranscriptionComplete: async (transcription: string) => {
-      if (!transcription.trim()) return
-      
-      // Adicionar mensagem do usuário
-      await sendVoiceMessage(transcription)
-    },
-    onInterimResult: (interimText: string) => {
-      // Atualizar última mensagem do usuário com transcrição parcial
-      setMessages(prev => {
-        const lastMessage = prev[prev.length - 1]
-        if (lastMessage && lastMessage.role === 'user' && lastMessage.id.startsWith('interim-')) {
-          return [...prev.slice(0, -1), {
-            ...lastMessage,
-            content: interimText
-          }]
-        } else if (interimText.trim()) {
-          return [...prev, {
-            id: 'interim-' + Date.now(),
-            role: 'user' as const,
-            content: interimText,
-            timestamp: new Date(),
-            isInterim: true
-          }]
-        }
-        return prev
-      })
-    }
-  })
-
-  // Hook para Realtime Mini (mantido para compatibilidade, mas não usado no novo sistema)
+  // Hook para Realtime Mini (substitui Google Cloud quando voiceMode está ativo)
   const realtimeSession = useRealtimeMini({
     firstName: firstName,
     tema: tema,
     bestFriendMode: bestFriendMode,
     onMessage: async (transcription: string) => {
-      // Não usado mais - mantido apenas para compatibilidade
+      // Quando receber transcrição do Realtime Mini, adicionar como mensagem do usuário
+      // O Realtime Mini já processa e responde em áudio, então não precisamos chamar /api/chat
       if (transcription && transcription.trim()) {
         const userMessage: Message = {
           id: Date.now().toString(),
@@ -703,7 +672,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
         // Se atingiu o limite, mostrar notificação e parar sessão
         if (data.isLimitReached) {
           showError('Você atingiu o limite de 500 minutos de voz deste mês!')
-          if (voiceTranscription.isListening) {
+          if (realtimeSession.isActive) {
             stopRecording()
           }
         }
@@ -717,7 +686,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
           remainingMinutes: 0
         })
         showError('Você atingiu o limite de 500 minutos de voz deste mês!')
-        if (voiceTranscription.isListening) {
+        if (realtimeSession.isActive) {
           stopRecording()
         }
       }
@@ -791,11 +760,11 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
         audioRef.current.pause()
         audioRef.current = null
       }
-      if (voiceTranscription.isListening) {
-        voiceTranscription.stopListening()
+      if (realtimeSession.isActive) {
+        realtimeSession.stopSession()
       }
     }
-  }, [voiceTranscription])
+  }, [realtimeSession])
 
   // Interromper áudio quando usuário começar a falar
   const interruptAudio = () => {
@@ -819,25 +788,11 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
       return
     }
 
-    // Verificar se Web Speech API está disponível
-    if (!voiceTranscription.isSupported) {
-      showError('Seu navegador não suporta reconhecimento de voz. Use Chrome, Edge ou Safari.')
-      return
-    }
-
     try {
+      // Usar Realtime Mini para usuários Pro
       interruptAudio()
       setIsProcessingAudio(true)
-      setIsRecording(true)
-      
-      // Iniciar transcrição com Web Speech API
-      const started = voiceTranscription.startListening()
-      if (!started) {
-        showError('Não foi possível iniciar o reconhecimento de voz. Verifique as permissões do microfone.')
-        setIsProcessingAudio(false)
-        setIsRecording(false)
-        return
-      }
+      await realtimeSession.startSession()
       
       // Marcar início da sessão
       voiceSessionStartTime.current = Date.now()
@@ -859,38 +814,34 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
       console.error('Erro ao iniciar gravação:', error)
       showError('Não foi possível acessar o microfone. Verifique as permissões.')
       setIsProcessingAudio(false)
-      setIsRecording(false)
     }
   }
 
   // Parar gravação
   const stopRecording = () => {
-    voiceTranscription.stopListening()
-    setIsRecording(false)
-    
-    // Remover mensagens interinas
-    setMessages(prev => prev.filter(m => !m.isInterim))
-    
-    // Registrar tempo final
-    if (voiceSessionStartTime.current) {
-      const elapsedMs = Date.now() - voiceSessionStartTime.current
-      const elapsedMinutes = elapsedMs / (1000 * 60)
+    if (realtimeSession.isActive) {
+      realtimeSession.stopSession()
+      setIsRecording(false)
       
-      // Registrar minutos restantes se >= 0.1 minuto (6 segundos)
-      if (elapsedMinutes >= 0.1) {
-        recordVoiceUsage(Number(elapsedMinutes.toFixed(2)))
+      // Registrar tempo final
+      if (voiceSessionStartTime.current) {
+        const elapsedMs = Date.now() - voiceSessionStartTime.current
+        const elapsedMinutes = elapsedMs / (1000 * 60)
+        
+        // Registrar minutos restantes se >= 0.1 minuto (6 segundos)
+        if (elapsedMinutes >= 0.1) {
+          recordVoiceUsage(Number(elapsedMinutes.toFixed(2)))
+        }
+        
+        voiceSessionStartTime.current = null
       }
       
-      voiceSessionStartTime.current = null
+      // Limpar timer
+      if (voiceUsageTimerRef.current) {
+        clearInterval(voiceUsageTimerRef.current)
+        voiceUsageTimerRef.current = null
+      }
     }
-    
-    // Limpar timer
-    if (voiceUsageTimerRef.current) {
-      clearInterval(voiceUsageTimerRef.current)
-      voiceUsageTimerRef.current = null
-    }
-    
-    setIsProcessingAudio(false)
   }
 
 
@@ -993,13 +944,12 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
         isEmergency: data.isEmergency || false
       }
 
-      // Remover mensagens interinas antes de adicionar as novas
-      const cleanMessages = messages.filter(m => !m.isInterim)
-      const updatedMessages = [...cleanMessages, userMessage, assistantMessage]
+      const updatedMessages = [...messages, userMessage, assistantMessage]
       setMessages(updatedMessages)
 
-      // Reproduzir resposta em áudio se estiver em modo voz
-      if (!data.isEmergency && voiceMode) {
+      // Se estiver usando Realtime Mini, a resposta já vem em áudio via WebRTC
+      // Não precisa chamar playAudioResponse
+      if (!data.isEmergency && !(voiceMode && realtimeSession.isActive)) {
         await playAudioResponse(data.message)
       }
 
@@ -1396,6 +1346,21 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
     inputRef.current?.focus()
   }
 
+  // Se estiver em modo voz e for plano Pro, mostrar o novo componente de voz
+  if (voiceMode && plan === 'pro') {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900 relative transition-colors">
+        <Sidebar />
+        <VoiceChat
+          onSendMessage={sendVoiceMessage}
+          messages={messages}
+          isLoading={isLoading}
+          firstName={firstName}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 relative transition-colors">
       {/* Logo desabafo no topo - Minimalista */}
@@ -1528,8 +1493,8 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
         <div className="w-full max-w-2xl">
           
           {/* Messages - Estilo Calm com mais espaçamento */}
-          {/* Mostrar mensagens sempre, incluindo transcrições de voz */}
-          {(
+          {/* Ocultar mensagens no modo voz */}
+          {!voiceMode && (
             <div className="space-y-4 sm:space-y-6 mb-6 sm:mb-10 pt-32 sm:pt-28 md:pt-24">
               <AnimatePresence>
                 {messages.map((message) => (
@@ -1565,13 +1530,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                   
                   {/* Mensagem */}
                   <div className={`flex-1 min-w-0 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-                    {message.isInterim ? (
-                      <div className="inline-block bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-2xl px-4 py-3 opacity-60 italic">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                          {message.content}...
-                        </span>
-                      </div>
-                    ) : message.isEmergency ? (
+                    {message.isEmergency ? (
                       <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -1723,8 +1682,8 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                   <div className="relative flex items-center justify-center">
                     {/* Botão principal - Estilo Calm mais suave */}
                     <motion.button
-                      whileHover={!(isRecording || voiceTranscription.isListening || voiceUsage.isLimitReached) ? { scale: 1.05 } : {}}
-                      whileTap={!(isRecording || voiceTranscription.isListening || voiceUsage.isLimitReached) ? { scale: 0.95 } : {}}
+                      whileHover={!(isRecording || realtimeSession.isActive || realtimeSession.isConnecting || voiceUsage.isLimitReached) ? { scale: 1.05 } : {}}
+                      whileTap={!(isRecording || realtimeSession.isActive || realtimeSession.isConnecting || voiceUsage.isLimitReached) ? { scale: 0.95 } : {}}
                       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                       onClick={(e) => {
                         e.stopPropagation()
@@ -1732,29 +1691,29 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                           showError('Você atingiu o limite de 500 minutos de voz deste mês!')
                           return
                         }
-                        if (isRecording || voiceTranscription.isListening) {
+                        if (isRecording || realtimeSession.isActive) {
                           // Encerrar sessão diretamente
                           stopRecording()
                         } else {
                           startRecording()
                         }
                       }}
-                      disabled={voiceUsage.isLimitReached}
+                      disabled={realtimeSession.isConnecting || voiceUsage.isLimitReached}
                       className={`relative w-28 h-28 sm:w-32 sm:h-32 rounded-full flex items-center justify-center transition-all cursor-pointer ${
                         voiceUsage.isLimitReached
                           ? 'bg-gradient-to-br from-gray-300 to-gray-400 cursor-not-allowed'
-                          : (isRecording || voiceTranscription.isListening)
+                          : (isRecording || realtimeSession.isActive)
                           ? 'bg-gradient-to-br from-pink-400 to-purple-500'
                           : 'bg-gradient-to-br from-pink-300 to-purple-400 hover:from-pink-400 hover:to-purple-500'
                       } disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
-                      {isLoading || isSending ? (
+                      {realtimeSession.isConnecting ? (
                         <motion.div
                           animate={{ rotate: 360 }}
-                          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                          className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                          transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                          className="w-8 h-8 border-3 border-white/80 border-t-transparent rounded-full"
                         />
-                      ) : (isRecording || voiceTranscription.isListening) ? (
+                      ) : (isRecording || realtimeSession.isActive) ? (
                         <motion.div
                           animate={{ scale: [1, 1.1, 1] }}
                           transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
@@ -1797,7 +1756,15 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                     >
                       limite de 500 minutos atingido
                     </motion.p>
-                  ) : (isRecording || voiceTranscription.isListening) ? (
+                  ) : realtimeSession.isConnecting ? (
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-[15px] text-slate-500 dark:text-slate-400 font-light tracking-wide"
+                    >
+                      conectando...
+                    </motion.p>
+                  ) : (isRecording || realtimeSession.isActive) && !realtimeSession.isConnecting ? (
                     <motion.p
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
