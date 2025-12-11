@@ -13,7 +13,6 @@ import { useRealtimeMini } from '@/hooks/useRealtimeMini'
 import { useToast } from '@/contexts/ToastContext'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
 import VoiceUsageBar from '@/components/VoiceUsageBar'
-import VoiceChat from '@/components/VoiceChat'
 
 interface ChatClientProps {
   firstName: string
@@ -468,6 +467,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
   const [userAvatar, setUserAvatar] = useState<string | null>(null)
   const [showEmojiAnimation, setShowEmojiAnimation] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const transcriptionsEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const mediaStreamRef = useRef<MediaStream | null>(null)
@@ -748,6 +748,13 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
+
+  // Scroll automático para transcrições no modo voz
+  useEffect(() => {
+    if (voiceMode && transcriptionsEndRef.current) {
+      transcriptionsEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [messages, voiceMode])
 
   useEffect(() => {
     scrollToBottom()
@@ -1346,21 +1353,6 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
     inputRef.current?.focus()
   }
 
-  // Se estiver em modo voz e for plano Pro, mostrar o novo componente de voz
-  if (voiceMode && plan === 'pro') {
-    return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 relative transition-colors">
-        <Sidebar />
-        <VoiceChat
-          onSendMessage={sendVoiceMessage}
-          messages={messages}
-          isLoading={isLoading}
-          firstName={firstName}
-        />
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 relative transition-colors">
       {/* Logo desabafo no topo - Minimalista */}
@@ -1782,6 +1774,121 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                     </motion.p>
                   )}
                 </div>
+
+                {/* Área de Transcrições - Inspirado no calmi.so */}
+                {messages.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="w-full max-w-2xl mx-auto mt-8 sm:mt-12"
+                  >
+                    <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-lg p-4 sm:p-6 max-h-[400px] overflow-y-auto">
+                      {/* Header */}
+                      <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200/50 dark:border-gray-700/50">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">💬</span>
+                          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            transcrições
+                          </h3>
+                        </div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {messages.length} {messages.length === 1 ? 'mensagem' : 'mensagens'}
+                        </span>
+                      </div>
+
+                      {/* Mensagens de transcrição */}
+                      <div className="space-y-4">
+                        <AnimatePresence>
+                          {messages.map((message) => (
+                            <motion.div
+                              key={message.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0 }}
+                              transition={{ duration: 0.3 }}
+                              className={`flex items-start gap-3 ${
+                                message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
+                              }`}
+                            >
+                              {/* Avatar pequeno */}
+                              <div className={`w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 rounded-full flex items-center justify-center ${
+                                message.role === 'assistant'
+                                  ? 'bg-gradient-to-br from-pink-400 to-pink-600'
+                                  : 'bg-gray-300 dark:bg-gray-600'
+                              }`}>
+                                {message.role === 'assistant' ? (
+                                  <span className="text-xs text-white">L</span>
+                                ) : (
+                                  <span className="text-xs text-gray-600 dark:text-gray-300">V</span>
+                                )}
+                              </div>
+
+                              {/* Conteúdo */}
+                              <div className={`flex-1 min-w-0 ${
+                                message.role === 'user' ? 'text-right' : 'text-left'
+                              }`}>
+                                <div className={`inline-block max-w-[85%] sm:max-w-[75%] rounded-2xl px-3 py-2 ${
+                                  message.role === 'user'
+                                    ? 'bg-pink-100 dark:bg-pink-900/30 text-gray-800 dark:text-gray-200'
+                                    : 'bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300'
+                                }`}>
+                                  <p className="text-sm font-light leading-relaxed break-words">
+                                    {message.content}
+                                  </p>
+                                </div>
+                                {/* Timestamp */}
+                                <p className={`text-xs text-gray-400 dark:text-gray-500 mt-1 ${
+                                  message.role === 'user' ? 'text-right' : 'text-left'
+                                }`}>
+                                  {message.timestamp
+                                    ? new Date(message.timestamp).toLocaleTimeString('pt-BR', {
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                      })
+                                    : ''}
+                                </p>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </AnimatePresence>
+
+                        {/* Indicador de digitação quando estiver processando */}
+                        {isProcessingAudio && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="flex items-start gap-3"
+                          >
+                            <div className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 flex items-center justify-center">
+                              <span className="text-xs text-white">L</span>
+                            </div>
+                            <div className="flex-1">
+                              <div className="inline-flex gap-1 bg-gray-100 dark:bg-gray-700/50 rounded-2xl px-3 py-2">
+                                <motion.span
+                                  animate={{ opacity: [0.4, 1, 0.4] }}
+                                  transition={{ duration: 1, repeat: Infinity }}
+                                  className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full"
+                                />
+                                <motion.span
+                                  animate={{ opacity: [0.4, 1, 0.4] }}
+                                  transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
+                                  className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full"
+                                />
+                                <motion.span
+                                  animate={{ opacity: [0.4, 1, 0.4] }}
+                                  transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
+                                  className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full"
+                                />
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                        <div ref={transcriptionsEndRef} />
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
 
                 {/* Botão discreto para alternar para modo texto */}
                 <motion.button
