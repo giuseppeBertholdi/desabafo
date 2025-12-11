@@ -482,59 +482,22 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
   const voiceSessionStartTime = useRef<number | null>(null)
   const voiceUsageTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-  // IDs para mensagens temporárias em tempo real
-  const currentUserMessageIdRef = useRef<string | null>(null)
-  const currentAssistantMessageIdRef = useRef<string | null>(null)
-
   // Hook para Realtime Mini (substitui Google Cloud quando voiceMode está ativo)
   const realtimeSession = useRealtimeMini({
     firstName: firstName,
     tema: tema,
     bestFriendMode: bestFriendMode,
-    onMessageDelta: (delta: string, fullText: string) => {
-      // Transcrição em tempo real do usuário (como Calm.so) - ATUALIZAR IMEDIATAMENTE
-      // Aceitar mesmo se fullText estiver vazio no início (para criar mensagem temporária)
-      console.log('📝 Delta transcrição usuário:', delta, '| Completo:', fullText)
-      if (!currentUserMessageIdRef.current) {
-        // Criar nova mensagem temporária IMEDIATAMENTE (mesmo se vazia)
-        const messageId = `user-${Date.now()}`
-        currentUserMessageIdRef.current = messageId
+    onMessage: async (transcription: string) => {
+      // Quando receber transcrição do Realtime Mini, adicionar como mensagem do usuário
+      // O Realtime Mini já processa e responde em áudio, então não precisamos chamar /api/chat
+      if (transcription && transcription.trim()) {
         const userMessage: Message = {
-          id: messageId,
+          id: Date.now().toString(),
           role: 'user',
-          content: fullText || '',
+          content: transcription,
           timestamp: new Date()
         }
         setMessages(prev => [...prev, userMessage])
-        console.log('✅ Nova mensagem do usuário criada:', fullText || '(vazia - aguardando transcrição)')
-      } else {
-        // Atualizar mensagem existente IMEDIATAMENTE
-        setMessages(prev => prev.map(msg => 
-          msg.id === currentUserMessageIdRef.current 
-            ? { ...msg, content: fullText || '' }
-            : msg
-        ))
-      }
-    },
-    onMessage: async (transcription: string) => {
-      // Quando receber transcrição completa do Realtime Mini
-      if (transcription && transcription.trim()) {
-        // Se já existe mensagem temporária, atualizar; senão criar nova
-        if (currentUserMessageIdRef.current) {
-          setMessages(prev => prev.map(msg => 
-            msg.id === currentUserMessageIdRef.current 
-              ? { ...msg, content: transcription.trim() }
-              : msg
-          ))
-        } else {
-          const userMessage: Message = {
-            id: `user-${Date.now()}`,
-            role: 'user',
-            content: transcription.trim(),
-            timestamp: new Date()
-          }
-          setMessages(prev => [...prev, userMessage])
-        }
         
         // Criar sessão na primeira mensagem se NÃO for chat temporário
         let currentSessionId = sessionId
@@ -546,7 +509,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                firstMessage: transcription.trim(),
+                firstMessage: transcription,
                 tema: tema || null,
                 skipSummary: true
               })
@@ -564,103 +527,48 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
         
         // Salvar no banco se tiver sessão
         if (!temporaryChat && currentSessionId) {
-          setMessages(prev => {
-            const updatedMessages = prev
-            fetch('/api/sessions', {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                sessionId: currentSessionId, 
-                messages: updatedMessages
-                  .filter(m => m.role === 'user' || m.role === 'assistant')
-                  .map(m => ({ role: m.role, content: m.content }))
-              })
-            }).catch(err => console.error('Erro ao salvar mensagem:', err))
-            return prev
-          })
+          const updatedMessages = [...messages, userMessage]
+          fetch('/api/sessions', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              sessionId: currentSessionId, 
+              messages: updatedMessages.map(m => ({ role: m.role, content: m.content }))
+            })
+          }).catch(err => console.error('Erro ao salvar mensagem:', err))
         }
-        
-        // Resetar ID da mensagem temporária
-        currentUserMessageIdRef.current = null
-      }
-    },
-    onResponseDelta: (delta: string, fullText: string) => {
-      // Resposta da IA em tempo real (como Calm.so) - ATUALIZAR IMEDIATAMENTE
-      // Aceitar mesmo se fullText estiver vazio no início (para criar mensagem temporária)
-      console.log('📝 Delta resposta IA:', delta, '| Completo:', fullText)
-      if (!currentAssistantMessageIdRef.current) {
-        // Criar nova mensagem temporária IMEDIATAMENTE (mesmo se vazia)
-        const messageId = `assistant-${Date.now()}`
-        currentAssistantMessageIdRef.current = messageId
-        const assistantMessage: Message = {
-          id: messageId,
-          role: 'assistant',
-          content: fullText || '',
-          timestamp: new Date()
-        }
-        setMessages(prev => [...prev, assistantMessage])
-        console.log('✅ Nova mensagem da IA criada:', fullText || '(vazia - aguardando transcrição)')
-      } else {
-        // Atualizar mensagem existente IMEDIATAMENTE
-        setMessages(prev => prev.map(msg => 
-          msg.id === currentAssistantMessageIdRef.current 
-            ? { ...msg, content: fullText || '' }
-            : msg
-        ))
       }
     },
     onResponse: async (response: string) => {
-      // Quando receber resposta completa da IA - GARANTIR que apareça
+      // Quando receber resposta da IA do Realtime Mini, adicionar como mensagem
       if (response && response.trim()) {
-        console.log('✅ Resposta completa recebida:', response)
-        // Se já existe mensagem temporária, atualizar; senão criar nova
-        if (currentAssistantMessageIdRef.current) {
-          setMessages(prev => prev.map(msg => 
-            msg.id === currentAssistantMessageIdRef.current 
-              ? { ...msg, content: response.trim() }
-              : msg
-          ))
-        } else {
-          // Criar nova mensagem se não existir
-          const messageId = `assistant-${Date.now()}`
-          currentAssistantMessageIdRef.current = messageId
-          const assistantMessage: Message = {
-            id: messageId,
-            role: 'assistant',
-            content: response.trim(),
-            timestamp: new Date()
-          }
-          setMessages(prev => [...prev, assistantMessage])
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: response,
+          timestamp: new Date()
         }
+        setMessages(prev => [...prev, assistantMessage])
         
         // Salvar no banco se tiver sessão
         if (!temporaryChat && sessionId) {
-          setMessages(prev => {
-            const updatedMessages = prev
-            fetch('/api/sessions', {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                sessionId: sessionId, 
-                messages: updatedMessages
-                  .filter(m => m.role === 'user' || m.role === 'assistant')
-                  .map(m => ({ role: m.role, content: m.content }))
-              })
-            }).catch(err => console.error('Erro ao salvar resposta:', err))
-            return prev
-          })
+          const updatedMessages = [...messages, assistantMessage]
+          fetch('/api/sessions', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              sessionId: sessionId, 
+              messages: updatedMessages.map(m => ({ role: m.role, content: m.content }))
+            })
+          }).catch(err => console.error('Erro ao salvar resposta:', err))
         }
-        
-        // NÃO resetar ID imediatamente - manter para possível atualização
-        // currentAssistantMessageIdRef.current = null
       }
     },
     onError: (error) => {
-      console.warn('⚠️ Erro na sessão Realtime (não encerrando):', error)
-      // NÃO encerrar a sessão automaticamente por erros
-      // Apenas logar e continuar - erros menores não devem interromper a conversa
-      // setIsProcessingAudio(false)
-      // setIsRecording(false)
+      console.error('Erro na sessão Realtime:', error)
+      showError('Erro na conexão de voz. Tente novamente.')
+      setIsProcessingAudio(false)
+      setIsRecording(false)
     },
     onSessionStart: () => {
       setIsRecording(true)
@@ -1568,9 +1476,9 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
       <div className={`flex items-end justify-center min-h-screen px-3 sm:px-4 md:px-6 ${voiceMode ? 'pb-32 sm:pb-36' : 'pb-20 sm:pb-24 md:pb-32'} bg-gradient-to-b from-transparent via-slate-50/30 to-slate-50/50 dark:via-slate-900/20 dark:to-slate-900/40`}>
         <div className="w-full max-w-2xl">
           
-          {/* Messages - Estilo Calm com mais espaçamento */}
+          {/* Messages - Estilo Calm.so */}
           {/* Mostrar mensagens também no modo voz para exibir transcrições */}
-          <div className={`space-y-4 sm:space-y-6 mb-6 sm:mb-10 ${voiceMode ? 'pt-20 sm:pt-16' : 'pt-32 sm:pt-28 md:pt-24'}`}>
+          <div className={`space-y-4 sm:space-y-6 mb-6 sm:mb-10 ${voiceMode ? 'pt-20 sm:pt-16 pb-28' : 'pt-32 sm:pt-28 md:pt-24'}`}>
               <AnimatePresence>
                 {messages.map((message) => (
                   <motion.div
@@ -1707,12 +1615,12 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
           <div className="relative">
             {voiceMode && plan === 'pro' ? ( // Apenas Pro tem acesso a voz
               /* Modo Voz - Estilo Calm.so Minimalista */
-              <div className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-t border-gray-200 dark:border-gray-700 z-50">
+              <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-gray-100 dark:border-gray-800 z-50">
                 <div className="max-w-2xl mx-auto px-4 py-6">
                   <div className="flex flex-col items-center gap-4">
-                    {/* Barra de uso de voz - compacta */}
-                    {!isLoadingUsage && (
-                      <div className="w-full max-w-md">
+                    {/* Barra de uso de voz - compacta e discreta */}
+                    {!isLoadingUsage && !voiceUsage.isLimitReached && (
+                      <div className="w-full max-w-xs">
                         <VoiceUsageBar
                           minutesUsed={voiceUsage.minutesUsed}
                           maxMinutes={voiceUsage.maxMinutes}
@@ -1768,7 +1676,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                             </svg>
                           )}
                           
-                          {/* Anel pulsante quando está gravando */}
+                          {/* Anel pulsante quando está gravando - estilo Calm.so */}
                           {(isRecording || realtimeSession.isActive) && (
                             <motion.div
                               animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
@@ -1778,7 +1686,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                           )}
                         </motion.button>
                         
-                        {/* Status suave - Estilo Calm.so */}
+                        {/* Status minimalista - estilo Calm.so */}
                         <motion.p
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
