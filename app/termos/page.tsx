@@ -2,8 +2,23 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Termos de Uso - desabafo.io',
-  description: 'Termos de uso do desabafo.io',
+  title: 'Termos de Uso | desabafo.io',
+  description: 'termos de uso do desabafo.io. leia os termos e condições de uso da plataforma de terapia online com IA.',
+  keywords: [
+    'termos de uso',
+    'termos e condições',
+    'desabafo.io termos',
+    'condições de uso',
+    'termos de serviço',
+  ],
+  openGraph: {
+    title: 'Termos de Uso | desabafo.io',
+    description: 'termos de uso do desabafo.io. leia os termos e condições de uso da plataforma.',
+    url: 'https://desabafo.io/termos',
+  },
+  alternates: {
+    canonical: 'https://desabafo.io/termos',
+  },
 }
 
 export default function TermosPage() {

@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /account/
+Disallow: /home/
+Disallow: /chat/
+Disallow: /dashboard/
+Disallow: /history/
+Disallow: /insights/
+Disallow: /journal/
+Disallow: /onboarding/
+Disallow: /callback/
+Disallow: /auth/
+
+# Sitemap
+Sitemap: https://desabafo.io/sitemap.xml
+
+

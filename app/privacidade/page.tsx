@@ -2,8 +2,24 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Política de Privacidade - desabafo.io',
-  description: 'Política de privacidade do desabafo.io',
+  title: 'Política de Privacidade | desabafo.io',
+  description: 'política de privacidade do desabafo.io. saiba como protegemos seus dados pessoais e respeitamos sua privacidade. conformidade com LGPD.',
+  keywords: [
+    'política de privacidade',
+    'privacidade desabafo.io',
+    'LGPD',
+    'proteção de dados',
+    'privacidade online',
+    'dados pessoais',
+  ],
+  openGraph: {
+    title: 'Política de Privacidade | desabafo.io',
+    description: 'política de privacidade do desabafo.io. saiba como protegemos seus dados pessoais.',
+    url: 'https://desabafo.io/privacidade',
+  },
+  alternates: {
+    canonical: 'https://desabafo.io/privacidade',
+  },
 }
 
 export default function PrivacidadePage() {

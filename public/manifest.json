@@ -1,0 +1,22 @@
+{
+  "name": "desabafo.io - sua IA terapeuta",
+  "short_name": "desabafo.io",
+  "description": "converse humanamente com uma IA terapeuta. sempre disponível pra ouvir e ajudar.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ec4899",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "lifestyle", "medical"],
+  "lang": "pt-BR"
+}
+
+

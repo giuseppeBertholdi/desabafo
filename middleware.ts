@@ -6,7 +6,7 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
 
   // Não verificar autenticação para rotas públicas
-  const publicPaths = ['/login', '/auth/callback', '/']
+  const publicPaths = ['/login', '/auth/callback', '/', '/sitemap.xml', '/robots.txt', '/manifest.json', '/privacidade', '/termos']
   if (publicPaths.includes(req.nextUrl.pathname)) {
     return res
   }
