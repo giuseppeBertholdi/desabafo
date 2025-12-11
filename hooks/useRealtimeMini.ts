@@ -74,7 +74,11 @@ export function useRealtimeMini(options: UseRealtimeMiniOptions = {}) {
   }, [])
 
   const startSession = useCallback(async () => {
-    if (isConnecting || session.isActive) return
+    // Proteção dupla: verificar estado local E refs
+    if (isConnecting || session.isActive || peerConnectionRef.current) {
+      console.log('⚠️ Sessão já está ativa ou conectando, ignorando startSession()')
+      return
+    }
 
     setIsConnecting(true)
 
@@ -160,14 +164,34 @@ Como conversar:
           console.error('Erro ao enviar instruções:', err)
         }
         
-        setSession({
-          isActive: true,
-          peerConnection: pc,
-          dataChannel: dc,
-          audioElement: audioElement,
-        })
-        setIsConnecting(false)
-        options.onSessionStart?.()
+        // IMPORTANTE: Só atualizar estado se a sessão não estiver já ativa
+        // Isso evita recriação desnecessária
+        // Verificar tanto o estado quanto as refs
+        if (!session.isActive && !peerConnectionRef.current) {
+          // Atualizar refs ANTES de setSession para evitar race conditions
+          peerConnectionRef.current = pc
+          dataChannelRef.current = dc
+          audioElementRef.current = audioElement
+          
+          setSession({
+            isActive: true,
+            peerConnection: pc,
+            dataChannel: dc,
+            audioElement: audioElement,
+          })
+          setIsConnecting(false)
+          options.onSessionStart?.()
+          console.log('✅ Sessão criada e ativa')
+        } else {
+          // Se já está ativa, apenas atualizar referências e não recriar
+          console.log('⚠️ Sessão já está ativa, não recriando. Estado:', {
+            isActive: session.isActive,
+            hasPeerConnection: !!peerConnectionRef.current,
+            hasDataChannel: !!dataChannelRef.current
+          })
+          setIsConnecting(false)
+          // NÃO chamar onSessionStart novamente
+        }
         
         // Solicitar transcrições automáticas e manter sessão ativa
         // IMPORTANTE: Enviar configuração de transcrição em uma mensagem separada
@@ -391,9 +415,25 @@ Como conversar:
             // Não fazer nada - manter sessão ativa para próxima interação
           } else if (data.type === 'error') {
             // Tratar erros sem encerrar a sessão
-            console.warn('⚠️ Erro recebido (não encerrando sessão):', data.error || data.message || data)
-            // Não chamar onError para não encerrar a sessão - apenas logar
+            const errorDetails = data.error || data.message || data
+            console.warn('⚠️ Erro recebido (não encerrando sessão):', errorDetails)
+            
+            // Se for um erro de configuração ou validação, apenas logar
+            // NÃO encerrar a sessão por erros menores
             // A sessão deve continuar ativa mesmo com erros menores
+            
+            // Verificar se é um erro crítico que realmente requer encerramento
+            const errorMessage = typeof errorDetails === 'string' 
+              ? errorDetails 
+              : errorDetails?.message || errorDetails?.type || JSON.stringify(errorDetails)
+            
+            // Apenas encerrar se for um erro crítico de autenticação ou conexão
+            if (errorMessage?.includes('authentication') || 
+                errorMessage?.includes('unauthorized') || 
+                errorMessage?.includes('token')) {
+              console.error('❌ Erro crítico detectado, mas mantendo sessão ativa por enquanto')
+              // Ainda não encerrar - deixar tentar continuar
+            }
           }
         } catch (error) {
           console.error('❌ Erro ao processar evento:', error, event.data)
@@ -453,7 +493,8 @@ Como conversar:
       const answer: RTCSessionDescriptionInit = { type: 'answer' as RTCSdpType, sdp: answerSdp }
       await pc.setRemoteDescription(answer)
 
-      peerConnectionRef.current = pc
+      // peerConnectionRef já foi definido no dc.onopen, não precisa definir novamente aqui
+      // peerConnectionRef.current = pc
     } catch (error: any) {
       console.error('Erro ao iniciar sessão:', error)
       setIsConnecting(false)
