@@ -492,23 +492,26 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
     tema: tema,
     bestFriendMode: bestFriendMode,
     onMessageDelta: (delta: string, fullText: string) => {
-      // Transcrição em tempo real do usuário (como Calm.so)
+      // Transcrição em tempo real do usuário (como Calm.so) - ATUALIZAR IMEDIATAMENTE
+      // Aceitar mesmo se fullText estiver vazio no início (para criar mensagem temporária)
+      console.log('📝 Delta transcrição usuário:', delta, '| Completo:', fullText)
       if (!currentUserMessageIdRef.current) {
-        // Criar nova mensagem temporária
+        // Criar nova mensagem temporária IMEDIATAMENTE (mesmo se vazia)
         const messageId = `user-${Date.now()}`
         currentUserMessageIdRef.current = messageId
         const userMessage: Message = {
           id: messageId,
           role: 'user',
-          content: fullText,
+          content: fullText || '',
           timestamp: new Date()
         }
         setMessages(prev => [...prev, userMessage])
+        console.log('✅ Nova mensagem do usuário criada:', fullText || '(vazia - aguardando transcrição)')
       } else {
-        // Atualizar mensagem existente
+        // Atualizar mensagem existente IMEDIATAMENTE
         setMessages(prev => prev.map(msg => 
           msg.id === currentUserMessageIdRef.current 
-            ? { ...msg, content: fullText }
+            ? { ...msg, content: fullText || '' }
             : msg
         ))
       }
@@ -582,30 +585,34 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
       }
     },
     onResponseDelta: (delta: string, fullText: string) => {
-      // Resposta da IA em tempo real (como Calm.so)
+      // Resposta da IA em tempo real (como Calm.so) - ATUALIZAR IMEDIATAMENTE
+      // Aceitar mesmo se fullText estiver vazio no início (para criar mensagem temporária)
+      console.log('📝 Delta resposta IA:', delta, '| Completo:', fullText)
       if (!currentAssistantMessageIdRef.current) {
-        // Criar nova mensagem temporária
+        // Criar nova mensagem temporária IMEDIATAMENTE (mesmo se vazia)
         const messageId = `assistant-${Date.now()}`
         currentAssistantMessageIdRef.current = messageId
         const assistantMessage: Message = {
           id: messageId,
           role: 'assistant',
-          content: fullText,
+          content: fullText || '',
           timestamp: new Date()
         }
         setMessages(prev => [...prev, assistantMessage])
+        console.log('✅ Nova mensagem da IA criada:', fullText || '(vazia - aguardando transcrição)')
       } else {
-        // Atualizar mensagem existente
+        // Atualizar mensagem existente IMEDIATAMENTE
         setMessages(prev => prev.map(msg => 
           msg.id === currentAssistantMessageIdRef.current 
-            ? { ...msg, content: fullText }
+            ? { ...msg, content: fullText || '' }
             : msg
         ))
       }
     },
     onResponse: async (response: string) => {
-      // Quando receber resposta completa da IA
+      // Quando receber resposta completa da IA - GARANTIR que apareça
       if (response && response.trim()) {
+        console.log('✅ Resposta completa recebida:', response)
         // Se já existe mensagem temporária, atualizar; senão criar nova
         if (currentAssistantMessageIdRef.current) {
           setMessages(prev => prev.map(msg => 
@@ -614,8 +621,11 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
               : msg
           ))
         } else {
+          // Criar nova mensagem se não existir
+          const messageId = `assistant-${Date.now()}`
+          currentAssistantMessageIdRef.current = messageId
           const assistantMessage: Message = {
-            id: `assistant-${Date.now()}`,
+            id: messageId,
             role: 'assistant',
             content: response.trim(),
             timestamp: new Date()
@@ -641,8 +651,8 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
           })
         }
         
-        // Resetar ID da mensagem temporária
-        currentAssistantMessageIdRef.current = null
+        // NÃO resetar ID imediatamente - manter para possível atualização
+        // currentAssistantMessageIdRef.current = null
       }
     },
     onError: (error) => {

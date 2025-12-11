@@ -183,7 +183,7 @@ Como conversar:
         setIsConnecting(false)
         options.onSessionStart?.()
         
-        // Solicitar transcrições automáticas
+        // Solicitar transcrições automáticas e manter sessão ativa
         try {
           const enableTranscription = {
             type: 'session.update',
@@ -194,11 +194,20 @@ Como conversar:
               },
               output_audio_transcription: {
                 model: 'whisper-1'
-              }
+              },
+              // Manter sessão ativa - não encerrar automaticamente
+              turn_detection: {
+                type: 'server_vad',
+                threshold: 0.5,
+                prefix_padding_ms: 300,
+                silence_duration_ms: 500
+              },
+              max_response_output_tokens: 512,
+              temperature: 0.8
             }
           }
           dc.send(JSON.stringify(enableTranscription))
-          console.log('Transcrições habilitadas')
+          console.log('✅ Transcrições habilitadas e sessão configurada para manter ativa')
         } catch (err) {
           console.error('Erro ao habilitar transcrições:', err)
         }
@@ -217,11 +226,11 @@ Como conversar:
           // Processar diferentes tipos de eventos de transcrição
           // Baseado nos eventos reais que estão chegando
           
-          // TRANSCRIÇÃO DO USUÁRIO
+          // TRANSCRIÇÃO DO USUÁRIO - Capturar todos os eventos possíveis
           if (data.type === 'conversation.item.input_audio_transcription.completed') {
             // Transcrição completa do áudio do usuário
             const transcription = data.transcript || data.item?.transcript || data.transcription || data.item?.input_audio_transcription?.transcript
-            console.log('✅ Transcrição completa (usuário):', transcription)
+            console.log('✅ Transcrição completa (usuário) - completed:', transcription)
             if (transcription && transcription.trim()) {
               userTranscriptionText = transcription.trim()
               if (options.onMessage) {
@@ -241,12 +250,14 @@ Como conversar:
             }
           } else if (data.type === 'conversation.item.done' && data.item?.role === 'user') {
             // Item de conversa do usuário finalizado - pode conter transcrição
+            console.log('📋 Item do usuário finalizado:', data.item)
             const content = data.item?.content
             if (Array.isArray(content)) {
               // Procurar por transcrição em qualquer parte do conteúdo
               for (const part of content) {
+                console.log('🔍 Verificando parte:', part.type, part)
                 if (part.type === 'input_audio_transcription' && part.transcript) {
-                  console.log('✅ Transcrição do usuário (item.done):', part.transcript)
+                  console.log('✅ Transcrição do usuário encontrada (item.done):', part.transcript)
                   if (options.onMessage) {
                     options.onMessage(part.transcript.trim())
                   }
@@ -260,34 +271,56 @@ Como conversar:
                 }
               }
             }
+            // Se não encontrou transcrição no conteúdo, tentar no item diretamente
+            if (!content || content.length === 0) {
+              const transcript = data.item?.transcript || data.item?.input_audio_transcription?.transcript
+              if (transcript && transcript.trim()) {
+                console.log('✅ Transcrição do usuário (item direto):', transcript)
+                if (options.onMessage) {
+                  options.onMessage(transcript.trim())
+                }
+              }
+            }
           } else if (data.type === 'conversation.item.created' && data.item?.role === 'user') {
-            // Novo item de conversa do usuário criado
-            userTranscriptionText = '' // Resetar transcrição do usuário
+            // Novo item de conversa do usuário criado - resetar e criar mensagem temporária
+            userTranscriptionText = ''
+            console.log('🆕 Novo item de conversa do usuário criado')
+            // Criar mensagem temporária vazia para começar a atualizar
+            if (options.onMessageDelta) {
+              options.onMessageDelta('', '')
+            }
+          } else if (data.type === 'input_audio_buffer.committed' || data.type === 'input_audio_buffer.speech_started') {
+            // Usuário começou a falar - criar mensagem temporária
+            console.log('🎤 Usuário começou a falar')
+            userTranscriptionText = ''
+            if (options.onMessageDelta) {
+              options.onMessageDelta('', '')
+            }
           }
           
-          // TRANSCRIÇÃO DA IA (RESPOSTA) - Baseado nos eventos reais recebidos
+          // TRANSCRIÇÃO DA IA (RESPOSTA) - Capturar IMEDIATAMENTE quando receber
           if (data.type === 'response.content_part.done') {
-            // Parte do conteúdo da resposta - CONTÉM TRANSCRIPT!
+            // Parte do conteúdo da resposta - CONTÉM TRANSCRIPT! (evento mais importante)
             const transcript = data.part?.transcript
             if (transcript && transcript.trim()) {
-              responseText = transcript.trim()
-              console.log('✅ Transcrição da resposta (IA) - content_part.done:', responseText)
-              // Enviar imediatamente quando receber
+              console.log('✅ Transcrição da resposta (IA) - content_part.done:', transcript)
+              // Enviar IMEDIATAMENTE - não esperar
               if (options.onResponse) {
-                options.onResponse(responseText)
+                options.onResponse(transcript.trim())
               }
-              // Também enviar via delta para atualização em tempo real
+              // Também atualizar via delta para garantir
               if (options.onResponseDelta) {
-                options.onResponseDelta(transcript, responseText)
+                options.onResponseDelta(transcript, transcript.trim())
               }
-              responseText = ''
+              responseText = transcript.trim()
             }
           } else if (data.type === 'response.content_part.delta') {
-            // Delta da transcrição da resposta (em tempo real)
+            // Delta da transcrição da resposta (em tempo real) - usar para atualização incremental
             const delta = data.delta || data.part?.transcript_delta
             if (delta) {
               responseText += delta
               console.log('📝 Resposta delta (IA):', delta, '| Completo:', responseText)
+              // Atualizar em tempo real
               if (options.onResponseDelta) {
                 options.onResponseDelta(delta, responseText)
               }
@@ -303,12 +336,13 @@ Como conversar:
                 .filter(Boolean)
               
               if (transcriptParts.length > 0) {
-                responseText = transcriptParts.join(' ').trim()
-                console.log('✅ Resposta via output_item (IA):', responseText)
+                const finalText = transcriptParts.join(' ').trim()
+                console.log('✅ Resposta via output_item (IA):', finalText)
+                // Enviar imediatamente
                 if (options.onResponse) {
-                  options.onResponse(responseText)
+                  options.onResponse(finalText)
                 }
-                responseText = ''
+                responseText = finalText
               }
             }
           } else if (data.type === 'response.done') {
@@ -324,23 +358,44 @@ Como conversar:
                 
                 if (transcriptParts.length > 0) {
                   const textContent = transcriptParts.join(' ').trim()
-                  console.log('✅ Resposta final (IA):', textContent)
-                  if (options.onResponse) {
+                  console.log('✅ Resposta final (IA) - response.done:', textContent)
+                  // Enviar se ainda não foi enviado
+                  if (options.onResponse && (!responseText || responseText !== textContent)) {
                     options.onResponse(textContent)
                   }
                 }
               }
             }
-            responseText = ''
+            // NÃO resetar responseText aqui - manter para referência
           } else if (data.type === 'response.created') {
-            // Resposta iniciada - resetar texto
+            // Resposta iniciada - resetar texto e criar mensagem temporária
             responseText = ''
-            console.log('🔄 Resposta iniciada')
+            console.log('🔄 Resposta iniciada - criando mensagem temporária')
+            // Criar mensagem vazia para começar a atualizar IMEDIATAMENTE
+            if (options.onResponseDelta) {
+              options.onResponseDelta('', '')
+            }
           } else if (data.type === 'conversation.item.created') {
             // Novo item de conversa criado
             if (data.item?.type === 'message' && data.item?.role === 'user') {
               userTranscriptionText = '' // Resetar transcrição do usuário
+              // Criar mensagem temporária para o usuário
+              if (options.onMessageDelta) {
+                options.onMessageDelta('', '')
+              }
+            } else if (data.item?.type === 'message' && data.item?.role === 'assistant') {
+              // Nova resposta da IA iniciada
+              responseText = ''
+              console.log('🆕 Nova resposta da IA iniciada')
+              // Criar mensagem temporária para a IA
+              if (options.onResponseDelta) {
+                options.onResponseDelta('', '')
+              }
             }
+          } else if (data.type === 'conversation.item.done' && data.item?.role === 'assistant') {
+            // Item de conversa da IA finalizado - NÃO encerrar sessão
+            console.log('✅ Resposta da IA finalizada - mantendo sessão ativa')
+            // Não fazer nada - manter sessão ativa para próxima interação
           }
         } catch (error) {
           console.error('❌ Erro ao processar evento:', error, event.data)
