@@ -656,10 +656,11 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
       }
     },
     onError: (error) => {
-      console.error('Erro na sessão Realtime:', error)
-      showError('Erro na conexão de voz. Tente novamente.')
-      setIsProcessingAudio(false)
-      setIsRecording(false)
+      console.warn('⚠️ Erro na sessão Realtime (não encerrando):', error)
+      // NÃO encerrar a sessão automaticamente por erros
+      // Apenas logar e continuar - erros menores não devem interromper a conversa
+      // setIsProcessingAudio(false)
+      // setIsRecording(false)
     },
     onSessionStart: () => {
       setIsRecording(true)

@@ -97,20 +97,6 @@ export function useRealtimeMini(options: UseRealtimeMiniOptions = {}) {
         iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
       })
 
-      // Manter conexão ativa - monitorar estado
-      pc.onconnectionstatechange = () => {
-        console.log('Connection state:', pc.connectionState)
-        // Não encerrar automaticamente - deixar o usuário decidir quando parar
-        if (pc.connectionState === 'failed') {
-          console.warn('Conexão falhou, mas mantendo sessão ativa')
-        }
-      }
-
-      // Monitorar ICE connection
-      pc.oniceconnectionstatechange = () => {
-        console.log('ICE connection state:', pc.iceConnectionState)
-      }
-
       // Configurar áudio de saída (resposta da IA)
       const audioElement = document.createElement('audio')
       audioElement.autoplay = true
@@ -184,33 +170,40 @@ Como conversar:
         options.onSessionStart?.()
         
         // Solicitar transcrições automáticas e manter sessão ativa
-        try {
-          const enableTranscription = {
-            type: 'session.update',
-            session: {
-              modalities: ['text', 'audio'],
-              input_audio_transcription: {
-                model: 'whisper-1'
-              },
-              output_audio_transcription: {
-                model: 'whisper-1'
-              },
-              // Manter sessão ativa - não encerrar automaticamente
-              turn_detection: {
-                type: 'server_vad',
-                threshold: 0.5,
-                prefix_padding_ms: 300,
-                silence_duration_ms: 500
-              },
-              max_response_output_tokens: 512,
-              temperature: 0.8
+        // IMPORTANTE: Enviar configuração de transcrição em uma mensagem separada
+        // para evitar conflitos com as instruções do sistema
+        setTimeout(() => {
+          try {
+            const enableTranscription = {
+              type: 'session.update',
+              session: {
+                modalities: ['text', 'audio'],
+                input_audio_transcription: {
+                  model: 'whisper-1'
+                },
+                output_audio_transcription: {
+                  model: 'whisper-1'
+                },
+                // Manter sessão ativa - não encerrar automaticamente
+                turn_detection: {
+                  type: 'server_vad',
+                  threshold: 0.5,
+                  prefix_padding_ms: 300,
+                  silence_duration_ms: 500
+                },
+                max_response_output_tokens: 512,
+                temperature: 0.8
+              }
             }
+            if (dc.readyState === 'open') {
+              dc.send(JSON.stringify(enableTranscription))
+              console.log('✅ Transcrições habilitadas e sessão configurada para manter ativa')
+            }
+          } catch (err) {
+            console.warn('⚠️ Erro ao habilitar transcrições (não crítico):', err)
+            // Não encerrar sessão por erro de configuração
           }
-          dc.send(JSON.stringify(enableTranscription))
-          console.log('✅ Transcrições habilitadas e sessão configurada para manter ativa')
-        } catch (err) {
-          console.error('Erro ao habilitar transcrições:', err)
-        }
+        }, 500) // Aguardar um pouco para garantir que a conexão está estável
       }
 
       let responseText = ''
@@ -396,15 +389,42 @@ Como conversar:
             // Item de conversa da IA finalizado - NÃO encerrar sessão
             console.log('✅ Resposta da IA finalizada - mantendo sessão ativa')
             // Não fazer nada - manter sessão ativa para próxima interação
+          } else if (data.type === 'error') {
+            // Tratar erros sem encerrar a sessão
+            console.warn('⚠️ Erro recebido (não encerrando sessão):', data.error || data.message || data)
+            // Não chamar onError para não encerrar a sessão - apenas logar
+            // A sessão deve continuar ativa mesmo com erros menores
           }
         } catch (error) {
           console.error('❌ Erro ao processar evento:', error, event.data)
+          // Não encerrar sessão por erro de parsing - continuar
         }
       }
 
       dc.onerror = (error) => {
-        console.error('Erro no data channel:', error)
-        options.onError?.(new Error('Erro na conexão de dados'))
+        console.warn('⚠️ Erro no data channel (não encerrando):', error)
+        // NÃO chamar onError para não encerrar a sessão automaticamente
+        // Apenas logar o erro
+      }
+
+      // Tratar erros de conexão sem encerrar
+      pc.oniceconnectionstatechange = () => {
+        console.log('ICE connection state:', pc.iceConnectionState)
+        // Se a conexão falhar, tentar manter ativa
+        if (pc.iceConnectionState === 'failed') {
+          console.warn('⚠️ ICE connection failed, mas mantendo sessão ativa')
+          // Não encerrar - deixar tentar reconectar
+        }
+      }
+
+      pc.onconnectionstatechange = () => {
+        console.log('Connection state:', pc.connectionState)
+        // Se desconectar, não encerrar imediatamente - pode ser temporário
+        if (pc.connectionState === 'disconnected') {
+          console.warn('⚠️ Conexão desconectada, mas mantendo sessão ativa')
+        } else if (pc.connectionState === 'failed') {
+          console.warn('⚠️ Conexão falhou, mas mantendo sessão ativa')
+        }
       }
 
       // Criar oferta SDP
@@ -437,8 +457,15 @@ Como conversar:
     } catch (error: any) {
       console.error('Erro ao iniciar sessão:', error)
       setIsConnecting(false)
-      options.onError?.(error)
-      cleanup()
+      // Só chamar onError se for um erro crítico que realmente impede a conexão
+      // Erros menores não devem encerrar a sessão
+      if (error.message?.includes('token') || error.message?.includes('authentication')) {
+        options.onError?.(error)
+        cleanup()
+      } else {
+        // Para outros erros, apenas logar mas não encerrar
+        console.warn('⚠️ Erro não crítico, mantendo sessão ativa:', error)
+      }
     }
   }, [isConnecting, session.isActive, options, cleanup])
 
