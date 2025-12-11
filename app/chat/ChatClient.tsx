@@ -796,19 +796,19 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
       // Marcar início da sessão
       voiceSessionStartTime.current = Date.now()
       
-      // Iniciar timer para registrar uso a cada minuto
+      // Iniciar timer para registrar uso a cada minuto (sem parar a sessão)
       voiceUsageTimerRef.current = setInterval(() => {
-        if (voiceSessionStartTime.current) {
+        if (voiceSessionStartTime.current && realtimeSession.isActive) {
           const elapsedMs = Date.now() - voiceSessionStartTime.current
           const elapsedMinutes = elapsedMs / (1000 * 60)
           
-          // Registrar a cada 1 minuto
+          // Registrar a cada 1 minuto (sem interromper a sessão)
           if (elapsedMinutes >= 1) {
             recordVoiceUsage(1) // Registrar 1 minuto
             voiceSessionStartTime.current = Date.now() // Reset timer
           }
         }
-      }, 5000) // Verificar a cada 5 segundos
+      }, 60000) // Verificar a cada 1 minuto (não a cada 5 segundos)
     } catch (error) {
       console.error('Erro ao iniciar gravação:', error)
       showError('Não foi possível acessar o microfone. Verifique as permissões.')

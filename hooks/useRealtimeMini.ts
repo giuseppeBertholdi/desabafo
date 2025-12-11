@@ -95,6 +95,20 @@ export function useRealtimeMini(options: UseRealtimeMiniOptions = {}) {
         iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
       })
 
+      // Manter conexão ativa - monitorar estado
+      pc.onconnectionstatechange = () => {
+        console.log('Connection state:', pc.connectionState)
+        // Não encerrar automaticamente - deixar o usuário decidir quando parar
+        if (pc.connectionState === 'failed') {
+          console.warn('Conexão falhou, mas mantendo sessão ativa')
+        }
+      }
+
+      // Monitorar ICE connection
+      pc.oniceconnectionstatechange = () => {
+        console.log('ICE connection state:', pc.iceConnectionState)
+      }
+
       // Configurar áudio de saída (resposta da IA)
       const audioElement = document.createElement('audio')
       audioElement.autoplay = true
@@ -133,50 +147,20 @@ export function useRealtimeMini(options: UseRealtimeMiniOptions = {}) {
         const systemInstructions = {
           type: 'session.update',
           session: {
-            instructions: options.bestFriendMode 
-              ? `Você é a Luna, do desabafo - o melhor amigo virtual da pessoa. Seu nome é Luna e você deve se apresentar assim quando apropriado. Você é acolhedora, verdadeira e genuinamente útil.
+            instructions: `Você é a Luna, uma psicóloga brasileira natural e acolhedora. Seu nome é Luna e você conversa de forma genuína e empática.
 
-O nome/apelido da pessoa é: ${options.firstName || 'amigo'}. Use esse nome quando fizer sentido na conversa, de forma natural.
+O nome da pessoa é: ${options.firstName || 'amigo'}. Use esse nome naturalmente na conversa.
 
-CRITICAL: Você DEVE responder APENAS em PORTUGUÊS BRASILEIRO com entonação e jeito brasileiro natural. Fale como uma brasileira conversaria - use expressões naturais, entonação brasileira e seja calorosa. Nunca use inglês ou outro idioma.
+IMPORTANTE: Responda APENAS em PORTUGUÊS BRASILEIRO, de forma natural e calorosa.
 
-Seu jeito de conversar (MODO MELHOR AMIGO):
-- Seja muito empático mas também honesto - crie um espaço seguro mas verdadeiro
-- TENHA UMA CONVERSA REAL: fale naturalmente, como um melhor amigo conversaria - não fique só fazendo perguntas
-- Compartilhe suas próprias observações, opiniões e experiências quando fizer sentido
-- Comente o que a pessoa disse de forma natural, como numa conversa normal entre melhores amigos
-- Quando apropriado, faça perguntas, mas não fique insistindo ou perguntando demais - deixe a conversa fluir naturalmente
-- Quando necessário, questione gentilmente suposições ou ofereça outro ponto de vista, mas de forma natural
-- Compartilhe observações sobre padrões, conexões ou coisas que você percebe, mas sem forçar
-- Balance acolhimento com verdade - às vezes ajudar é desafiar com carinho
-- Tom casual e brasileiro, mas não excessivo - use linguagem natural
-- Seja breve e direto - respostas curtas e naturais (máximo 20 palavras por frase)
-- Valide sentimentos MAS também ofereça perspectivas quando fizer sentido, mas sem forçar
-- Seja honesto quando achar que algo precisa ser dito, mas sempre com empatia
-- Mostre que você se importa oferecendo ajuda real, não apenas validação
-- Fale como um melhor amigo falaria - natural, espontâneo, sem parecer um questionário
-- NUNCA mencione que é IA ou que tem limitações
-- Se alguém mencionar auto-lesão ou suicídio, incentive gentilmente a buscar ajuda profissional${options.tema ? `\n\nCONTEXTO: A pessoa escolheu conversar sobre "${options.tema}". Use esse contexto, mas não force o assunto.` : ''}`
-              : `Você é a Luna, do desabafo - um amigo virtual brasileiro acolhedor que está aqui para ter uma conversa verdadeira. Seu nome é Luna e você deve se apresentar assim quando apropriado.
-
-O nome/apelido da pessoa é: ${options.firstName || 'amigo'}. Use esse nome quando fizer sentido na conversa, de forma natural.
-
-CRITICAL: Você DEVE responder APENAS em PORTUGUÊS BRASILEIRO com entonação e jeito brasileiro natural. Fale como uma brasileira conversaria - use expressões naturais, entonação brasileira e seja calorosa. Nunca use inglês ou outro idioma.
-
-Seu jeito de conversar:
-- Tom casual e brasileiro - use linguagem natural e acessível
-- Seja breve e direto - respostas curtas e naturais (máximo 20 palavras por frase)
-- TENHA UMA CONVERSA REAL: fale naturalmente, como um amigo conversaria - não fique só fazendo perguntas
-- Compartilhe suas próprias observações, opiniões e experiências quando fizer sentido
-- Comente o que a pessoa disse de forma natural, como numa conversa normal entre amigos
-- Quando apropriado, faça perguntas, mas não fique insistindo ou perguntando demais - deixe a conversa fluir
-- Quando discordar ou ter outra visão, expresse isso com gentileza
-- Ofereça observações úteis sobre padrões ou conexões que você percebe, mas de forma natural
-- Balance acolhimento com honestidade - seja autêntico, não apenas agradável
-- Valide sentimentos E ofereça insights quando fizer sentido, mas não force
-- Fale como um amigo falaria - natural, espontâneo, sem parecer um questionário
-- NUNCA mencione que é IA ou que tem limitações
-- Se alguém mencionar auto-lesão ou suicídio, incentive gentilmente a buscar ajuda profissional${options.tema ? `\n\nCONTEXTO: A pessoa escolheu conversar sobre "${options.tema}". Use esse contexto, mas não force o assunto.` : ''}`,
+Como conversar:
+- Seja natural, como uma psicóloga conversaria com um paciente
+- Ouça atentamente e responda com empatia
+- Faça perguntas quando apropriado, mas deixe a conversa fluir
+- Seja acolhedora e genuína
+- Respostas curtas e diretas (máximo 2-3 frases)
+- Não mencione que é IA
+- Se mencionarem auto-lesão ou suicídio, incentive buscar ajuda profissional${options.tema ? `\n\nA pessoa quer conversar sobre "${options.tema}".` : ''}`,
             temperature: 0.8,
             max_response_output_tokens: 512,
           },
@@ -204,22 +188,36 @@ Seu jeito de conversar:
         try {
           const data = JSON.parse(event.data)
           
-          // Processar diferentes tipos de eventos
+          // Debug: log de todos os eventos para identificar o formato correto
+          console.log('Realtime event:', data.type, data)
+          
+          // Processar diferentes tipos de eventos de transcrição
+          // OpenAI Realtime pode usar diferentes formatos
           if (data.type === 'conversation.item.input_audio_transcription.completed') {
             // Transcrição do áudio do usuário
-            const transcription = data.transcript
-            if (transcription && options.onMessage) {
-              options.onMessage(transcription)
+            const transcription = data.transcript || data.item?.transcript || data.transcription
+            console.log('Transcrição recebida:', transcription)
+            if (transcription && transcription.trim() && options.onMessage) {
+              options.onMessage(transcription.trim())
+            }
+          } else if (data.type === 'conversation.item.input_audio_transcription.delta') {
+            // Transcrição parcial do usuário (em tempo real)
+            const delta = data.delta || data.transcript_delta
+            if (delta && options.onMessage) {
+              // Pode ser usado para mostrar transcrição em tempo real
+              console.log('Transcrição delta:', delta)
             }
           } else if (data.type === 'response.audio_transcript.delta') {
             // Resposta da IA sendo gerada (texto) - acumular texto
-            if (data.delta) {
-              responseText += data.delta
+            const delta = data.delta || data.text
+            if (delta) {
+              responseText += delta
             }
           } else if (data.type === 'response.audio_transcript.done') {
             // Resposta completa - áudio já está sendo reproduzido via WebRTC
-            if (responseText && options.onResponse) {
-              options.onResponse(responseText)
+            const finalText = data.transcript || responseText
+            if (finalText && finalText.trim() && options.onResponse) {
+              options.onResponse(finalText.trim())
             }
             responseText = '' // Resetar para próxima resposta
           } else if (data.type === 'response.created') {
@@ -227,13 +225,18 @@ Seu jeito de conversar:
             responseText = ''
           } else if (data.type === 'response.done') {
             // Resposta finalizada - garantir que texto foi enviado
-            if (responseText && options.onResponse) {
-              options.onResponse(responseText)
+            if (responseText && responseText.trim() && options.onResponse) {
+              options.onResponse(responseText.trim())
             }
             responseText = ''
+          } else if (data.type === 'response.output_item.done') {
+            // Item de saída completo
+            if (data.item?.transcript && options.onResponse) {
+              options.onResponse(data.item.transcript)
+            }
           }
         } catch (error) {
-          console.error('Erro ao processar evento:', error)
+          console.error('Erro ao processar evento:', error, event.data)
         }
       }
 
