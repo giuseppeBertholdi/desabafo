@@ -482,22 +482,56 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
   const voiceSessionStartTime = useRef<number | null>(null)
   const voiceUsageTimerRef = useRef<NodeJS.Timeout | null>(null)
 
+  // IDs para mensagens temporárias em tempo real
+  const currentUserMessageIdRef = useRef<string | null>(null)
+  const currentAssistantMessageIdRef = useRef<string | null>(null)
+
   // Hook para Realtime Mini (substitui Google Cloud quando voiceMode está ativo)
   const realtimeSession = useRealtimeMini({
     firstName: firstName,
     tema: tema,
     bestFriendMode: bestFriendMode,
-    onMessage: async (transcription: string) => {
-      // Quando receber transcrição do Realtime Mini, adicionar como mensagem do usuário
-      // O Realtime Mini já processa e responde em áudio, então não precisamos chamar /api/chat
-      if (transcription && transcription.trim()) {
+    onMessageDelta: (delta: string, fullText: string) => {
+      // Transcrição em tempo real do usuário (como Calm.so)
+      if (!currentUserMessageIdRef.current) {
+        // Criar nova mensagem temporária
+        const messageId = `user-${Date.now()}`
+        currentUserMessageIdRef.current = messageId
         const userMessage: Message = {
-          id: Date.now().toString(),
+          id: messageId,
           role: 'user',
-          content: transcription,
+          content: fullText,
           timestamp: new Date()
         }
         setMessages(prev => [...prev, userMessage])
+      } else {
+        // Atualizar mensagem existente
+        setMessages(prev => prev.map(msg => 
+          msg.id === currentUserMessageIdRef.current 
+            ? { ...msg, content: fullText }
+            : msg
+        ))
+      }
+    },
+    onMessage: async (transcription: string) => {
+      // Quando receber transcrição completa do Realtime Mini
+      if (transcription && transcription.trim()) {
+        // Se já existe mensagem temporária, atualizar; senão criar nova
+        if (currentUserMessageIdRef.current) {
+          setMessages(prev => prev.map(msg => 
+            msg.id === currentUserMessageIdRef.current 
+              ? { ...msg, content: transcription.trim() }
+              : msg
+          ))
+        } else {
+          const userMessage: Message = {
+            id: `user-${Date.now()}`,
+            role: 'user',
+            content: transcription.trim(),
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, userMessage])
+        }
         
         // Criar sessão na primeira mensagem se NÃO for chat temporário
         let currentSessionId = sessionId
@@ -509,7 +543,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                firstMessage: transcription,
+                firstMessage: transcription.trim(),
                 tema: tema || null,
                 skipSummary: true
               })
@@ -527,41 +561,88 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
         
         // Salvar no banco se tiver sessão
         if (!temporaryChat && currentSessionId) {
-          const updatedMessages = [...messages, userMessage]
-          fetch('/api/sessions', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              sessionId: currentSessionId, 
-              messages: updatedMessages.map(m => ({ role: m.role, content: m.content }))
-            })
-          }).catch(err => console.error('Erro ao salvar mensagem:', err))
+          setMessages(prev => {
+            const updatedMessages = prev
+            fetch('/api/sessions', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                sessionId: currentSessionId, 
+                messages: updatedMessages
+                  .filter(m => m.role === 'user' || m.role === 'assistant')
+                  .map(m => ({ role: m.role, content: m.content }))
+              })
+            }).catch(err => console.error('Erro ao salvar mensagem:', err))
+            return prev
+          })
         }
+        
+        // Resetar ID da mensagem temporária
+        currentUserMessageIdRef.current = null
       }
     },
-    onResponse: async (response: string) => {
-      // Quando receber resposta da IA do Realtime Mini, adicionar como mensagem
-      if (response && response.trim()) {
+    onResponseDelta: (delta: string, fullText: string) => {
+      // Resposta da IA em tempo real (como Calm.so)
+      if (!currentAssistantMessageIdRef.current) {
+        // Criar nova mensagem temporária
+        const messageId = `assistant-${Date.now()}`
+        currentAssistantMessageIdRef.current = messageId
         const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
+          id: messageId,
           role: 'assistant',
-          content: response,
+          content: fullText,
           timestamp: new Date()
         }
         setMessages(prev => [...prev, assistantMessage])
+      } else {
+        // Atualizar mensagem existente
+        setMessages(prev => prev.map(msg => 
+          msg.id === currentAssistantMessageIdRef.current 
+            ? { ...msg, content: fullText }
+            : msg
+        ))
+      }
+    },
+    onResponse: async (response: string) => {
+      // Quando receber resposta completa da IA
+      if (response && response.trim()) {
+        // Se já existe mensagem temporária, atualizar; senão criar nova
+        if (currentAssistantMessageIdRef.current) {
+          setMessages(prev => prev.map(msg => 
+            msg.id === currentAssistantMessageIdRef.current 
+              ? { ...msg, content: response.trim() }
+              : msg
+          ))
+        } else {
+          const assistantMessage: Message = {
+            id: `assistant-${Date.now()}`,
+            role: 'assistant',
+            content: response.trim(),
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, assistantMessage])
+        }
         
         // Salvar no banco se tiver sessão
         if (!temporaryChat && sessionId) {
-          const updatedMessages = [...messages, assistantMessage]
-          fetch('/api/sessions', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              sessionId: sessionId, 
-              messages: updatedMessages.map(m => ({ role: m.role, content: m.content }))
-            })
-          }).catch(err => console.error('Erro ao salvar resposta:', err))
+          setMessages(prev => {
+            const updatedMessages = prev
+            fetch('/api/sessions', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                sessionId: sessionId, 
+                messages: updatedMessages
+                  .filter(m => m.role === 'user' || m.role === 'assistant')
+                  .map(m => ({ role: m.role, content: m.content }))
+              })
+            }).catch(err => console.error('Erro ao salvar resposta:', err))
+            return prev
+          })
         }
+        
+        // Resetar ID da mensagem temporária
+        currentAssistantMessageIdRef.current = null
       }
     },
     onError: (error) => {

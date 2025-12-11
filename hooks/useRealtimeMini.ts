@@ -15,6 +15,8 @@ interface RealtimeSession {
 interface UseRealtimeMiniOptions {
   onMessage?: (message: string) => void
   onResponse?: (response: string) => void
+  onMessageDelta?: (delta: string, fullText: string) => void // Para transcrição em tempo real
+  onResponseDelta?: (delta: string, fullText: string) => void // Para resposta em tempo real
   onError?: (error: Error) => void
   onSessionStart?: () => void
   onSessionEnd?: () => void
@@ -180,9 +182,30 @@ Como conversar:
         })
         setIsConnecting(false)
         options.onSessionStart?.()
+        
+        // Solicitar transcrições automáticas
+        try {
+          const enableTranscription = {
+            type: 'session.update',
+            session: {
+              modalities: ['text', 'audio'],
+              input_audio_transcription: {
+                model: 'whisper-1'
+              },
+              output_audio_transcription: {
+                model: 'whisper-1'
+              }
+            }
+          }
+          dc.send(JSON.stringify(enableTranscription))
+          console.log('Transcrições habilitadas')
+        } catch (err) {
+          console.error('Erro ao habilitar transcrições:', err)
+        }
       }
 
       let responseText = ''
+      let userTranscriptionText = '' // Para acumular transcrição do usuário em tempo real
       
       dc.onmessage = (event) => {
         try {
@@ -194,45 +217,72 @@ Como conversar:
           // Processar diferentes tipos de eventos de transcrição
           // OpenAI Realtime pode usar diferentes formatos
           if (data.type === 'conversation.item.input_audio_transcription.completed') {
-            // Transcrição do áudio do usuário
-            const transcription = data.transcript || data.item?.transcript || data.transcription
-            console.log('Transcrição recebida:', transcription)
-            if (transcription && transcription.trim() && options.onMessage) {
-              options.onMessage(transcription.trim())
+            // Transcrição completa do áudio do usuário
+            const transcription = data.transcript || data.item?.transcript || data.transcription || data.item?.input_audio_transcription?.transcript
+            console.log('Transcrição completa recebida:', transcription)
+            if (transcription && transcription.trim()) {
+              userTranscriptionText = transcription.trim()
+              if (options.onMessage) {
+                options.onMessage(userTranscriptionText)
+              }
+              userTranscriptionText = '' // Resetar
             }
           } else if (data.type === 'conversation.item.input_audio_transcription.delta') {
-            // Transcrição parcial do usuário (em tempo real)
-            const delta = data.delta || data.transcript_delta
-            if (delta && options.onMessage) {
-              // Pode ser usado para mostrar transcrição em tempo real
-              console.log('Transcrição delta:', delta)
+            // Transcrição parcial do usuário (em tempo real) - como Calm.so
+            const delta = data.delta || data.transcript_delta || data.item?.input_audio_transcription?.delta
+            if (delta) {
+              userTranscriptionText += delta
+              console.log('Transcrição delta (usuário):', delta, 'Texto completo:', userTranscriptionText)
+              if (options.onMessageDelta) {
+                options.onMessageDelta(delta, userTranscriptionText)
+              }
             }
           } else if (data.type === 'response.audio_transcript.delta') {
-            // Resposta da IA sendo gerada (texto) - acumular texto
-            const delta = data.delta || data.text
+            // Resposta da IA sendo gerada (texto) - acumular texto em tempo real
+            const delta = data.delta || data.text || data.transcript_delta
             if (delta) {
               responseText += delta
+              console.log('Resposta delta (IA):', delta, 'Texto completo:', responseText)
+              if (options.onResponseDelta) {
+                options.onResponseDelta(delta, responseText)
+              }
             }
           } else if (data.type === 'response.audio_transcript.done') {
             // Resposta completa - áudio já está sendo reproduzido via WebRTC
             const finalText = data.transcript || responseText
-            if (finalText && finalText.trim() && options.onResponse) {
-              options.onResponse(finalText.trim())
+            console.log('Resposta completa (IA):', finalText)
+            if (finalText && finalText.trim()) {
+              if (options.onResponse) {
+                options.onResponse(finalText.trim())
+              }
             }
             responseText = '' // Resetar para próxima resposta
           } else if (data.type === 'response.created') {
             // Resposta iniciada - resetar texto
             responseText = ''
+            console.log('Resposta iniciada')
           } else if (data.type === 'response.done') {
             // Resposta finalizada - garantir que texto foi enviado
-            if (responseText && responseText.trim() && options.onResponse) {
-              options.onResponse(responseText.trim())
+            if (responseText && responseText.trim()) {
+              console.log('Resposta final (IA):', responseText)
+              if (options.onResponse) {
+                options.onResponse(responseText.trim())
+              }
             }
             responseText = ''
           } else if (data.type === 'response.output_item.done') {
             // Item de saída completo
-            if (data.item?.transcript && options.onResponse) {
-              options.onResponse(data.item.transcript)
+            const transcript = data.item?.transcript || data.item?.transcription
+            if (transcript && transcript.trim()) {
+              console.log('Resposta via output_item (IA):', transcript)
+              if (options.onResponse) {
+                options.onResponse(transcript.trim())
+              }
+            }
+          } else if (data.type === 'conversation.item.created') {
+            // Novo item de conversa criado
+            if (data.item?.type === 'message' && data.item?.role === 'user') {
+              userTranscriptionText = '' // Resetar transcrição do usuário
             }
           }
         } catch (error) {
