@@ -796,19 +796,19 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
       // Marcar início da sessão
       voiceSessionStartTime.current = Date.now()
       
-      // Iniciar timer para registrar uso a cada minuto (sem parar a sessão)
+      // Iniciar timer para registrar uso a cada minuto
       voiceUsageTimerRef.current = setInterval(() => {
-        if (voiceSessionStartTime.current && realtimeSession.isActive) {
+        if (voiceSessionStartTime.current) {
           const elapsedMs = Date.now() - voiceSessionStartTime.current
           const elapsedMinutes = elapsedMs / (1000 * 60)
           
-          // Registrar a cada 1 minuto (sem interromper a sessão)
+          // Registrar a cada 1 minuto
           if (elapsedMinutes >= 1) {
             recordVoiceUsage(1) // Registrar 1 minuto
             voiceSessionStartTime.current = Date.now() // Reset timer
           }
         }
-      }, 60000) // Verificar a cada 1 minuto (não a cada 5 segundos)
+      }, 5000) // Verificar a cada 5 segundos
     } catch (error) {
       console.error('Erro ao iniciar gravação:', error)
       showError('Não foi possível acessar o microfone. Verifique as permissões.')
@@ -1472,13 +1472,14 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
         )}
       </div>
 
-      {/* Chat Container - Estilo Calm.so */}
-      <div className={`flex items-end justify-center min-h-screen px-3 sm:px-4 md:px-6 ${voiceMode ? 'pb-32 sm:pb-36' : 'pb-20 sm:pb-24 md:pb-32'} bg-gradient-to-b from-transparent via-slate-50/30 to-slate-50/50 dark:via-slate-900/20 dark:to-slate-900/40`}>
+      {/* Chat Container - Estilo Calm */}
+      <div className="flex items-end justify-center min-h-screen px-3 sm:px-4 md:px-6 pb-20 sm:pb-24 md:pb-32 bg-gradient-to-b from-transparent via-slate-50/30 to-slate-50/50 dark:via-slate-900/20 dark:to-slate-900/40">
         <div className="w-full max-w-2xl">
           
-          {/* Messages - Estilo Calm.so */}
-          {/* Mostrar mensagens também no modo voz para exibir transcrições */}
-          <div className={`space-y-4 sm:space-y-6 mb-6 sm:mb-10 ${voiceMode ? 'pt-20 sm:pt-16 pb-28' : 'pt-32 sm:pt-28 md:pt-24'}`}>
+          {/* Messages - Estilo Calm com mais espaçamento */}
+          {/* Ocultar mensagens no modo voz */}
+          {!voiceMode && (
+            <div className="space-y-4 sm:space-y-6 mb-6 sm:mb-10 pt-32 sm:pt-28 md:pt-24">
               <AnimatePresence>
                 {messages.map((message) => (
                   <motion.div
@@ -1610,110 +1611,171 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
 
             <div ref={messagesEndRef} />
           </div>
+          )}
 
-          {/* Input Area - Estilo Calm.so */}
+          {/* Input Area - Minimalista */}
           <div className="relative">
             {voiceMode && plan === 'pro' ? ( // Apenas Pro tem acesso a voz
-              /* Modo Voz - Estilo Calm.so Minimalista */
-              <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-gray-100 dark:border-gray-800 z-50">
-                <div className="max-w-2xl mx-auto px-4 py-6">
-                  <div className="flex flex-col items-center gap-4">
-                    {/* Barra de uso de voz - compacta e discreta */}
-                    {!isLoadingUsage && !voiceUsage.isLimitReached && (
-                      <div className="w-full max-w-xs">
-                        <VoiceUsageBar
-                          minutesUsed={voiceUsage.minutesUsed}
-                          maxMinutes={voiceUsage.maxMinutes}
-                          isLimitReached={voiceUsage.isLimitReached}
-                        />
-                      </div>
-                    )}
+              /* Modo Voz - Estilo Calm */
+              <div className="flex flex-col items-center justify-center min-h-[300px] space-y-6">
+                {/* Título centralizado no topo */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center mb-4"
+                >
+                  <h2 className="text-2xl sm:text-3xl font-light text-slate-700 dark:text-slate-200 tracking-wide mb-3">
+                    converse com a nossa IA Luna
+                  </h2>
+                  <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 font-light">
+                    estou ouvindo, é só desabafar
+                  </p>
+                </motion.div>
 
-                    {/* Botão de gravação - estilo Calm.so */}
-                    {!voiceUsage.isLimitReached ? (
-                      <div className="flex flex-col items-center gap-3">
-                        <motion.button
-                          whileHover={!(isRecording || realtimeSession.isActive || realtimeSession.isConnecting) ? { scale: 1.05 } : {}}
-                          whileTap={!(isRecording || realtimeSession.isActive || realtimeSession.isConnecting) ? { scale: 0.95 } : {}}
-                          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            if (voiceUsage.isLimitReached) {
-                              showError('Você atingiu o limite de 500 minutos de voz deste mês!')
-                              return
-                            }
-                            if (isRecording || realtimeSession.isActive) {
-                              stopRecording()
-                            } else {
-                              startRecording()
-                            }
-                          }}
-                          disabled={realtimeSession.isConnecting || voiceUsage.isLimitReached}
-                          className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-lg ${
-                            voiceUsage.isLimitReached
-                              ? 'bg-gray-300 cursor-not-allowed'
-                              : (isRecording || realtimeSession.isActive)
-                              ? 'bg-red-500 hover:bg-red-600'
-                              : 'bg-pink-500 hover:bg-pink-600'
-                          } disabled:opacity-50 disabled:cursor-not-allowed`}
-                        >
-                          {realtimeSession.isConnecting ? (
-                            <motion.div
-                              animate={{ rotate: 360 }}
-                              transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
-                              className="w-8 h-8 border-3 border-white border-t-transparent rounded-full"
-                            />
-                          ) : (isRecording || realtimeSession.isActive) ? (
-                            <motion.div
-                              animate={{ scale: [1, 1.2, 1] }}
-                              transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
-                              className="w-8 h-8 bg-white rounded-sm"
-                            />
-                          ) : (
-                            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
-                              <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-                            </svg>
-                          )}
-                          
-                          {/* Anel pulsante quando está gravando - estilo Calm.so */}
-                          {(isRecording || realtimeSession.isActive) && (
-                            <motion.div
-                              animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
-                              transition={{ duration: 2, repeat: Infinity }}
-                              className="absolute inset-0 rounded-full border-2 border-red-400"
-                            />
-                          )}
-                        </motion.button>
-                        
-                        {/* Status minimalista - estilo Calm.so */}
-                        <motion.p
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className={`text-sm font-light ${
-                            realtimeSession.isConnecting
-                              ? 'text-gray-500 dark:text-gray-400'
-                              : (isRecording || realtimeSession.isActive)
-                              ? 'text-red-500 dark:text-red-400'
-                              : 'text-gray-400 dark:text-gray-500'
-                          }`}
-                        >
-                          {realtimeSession.isConnecting
-                            ? 'conectando...'
-                            : (isRecording || realtimeSession.isActive)
-                            ? 'gravando...'
-                            : 'toque para falar'}
-                        </motion.p>
+                {/* Barra de uso de voz */}
+                {!isLoadingUsage && (
+                  <VoiceUsageBar
+                    minutesUsed={voiceUsage.minutesUsed}
+                    maxMinutes={voiceUsage.maxMinutes}
+                    isLimitReached={voiceUsage.isLimitReached}
+                  />
+                )}
+
+                {/* Aviso de privacidade */}
+                {!voiceUsage.isLimitReached && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="w-full max-w-md mx-auto"
+                  >
+                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 shadow-sm">
+                      <div className="flex items-start gap-3">
+                        <span className="text-lg">🔒</span>
+                        <div className="flex-1">
+                          <p className="text-sm text-amber-800 dark:text-amber-200 font-light leading-relaxed">
+                            <strong className="font-medium">totalmente seguro:</strong> suas conversas por voz não ficam salvas nos chats nem nos insights. tudo é privado e temporário.
+                          </p>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="text-center py-4">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          limite de voz atingido
-                        </p>
-                      </div>
-                    )}
+                    </div>
+                  </motion.div>
+                )}
+                
+                {/* Botão grande e centralizado - Estilo Calm */}
+                {!voiceUsage.isLimitReached ? (
+                  <div className="relative flex items-center justify-center">
+                    {/* Botão principal - Estilo Calm mais suave */}
+                    <motion.button
+                      whileHover={!(isRecording || realtimeSession.isActive || realtimeSession.isConnecting || voiceUsage.isLimitReached) ? { scale: 1.05 } : {}}
+                      whileTap={!(isRecording || realtimeSession.isActive || realtimeSession.isConnecting || voiceUsage.isLimitReached) ? { scale: 0.95 } : {}}
+                      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (voiceUsage.isLimitReached) {
+                          showError('Você atingiu o limite de 500 minutos de voz deste mês!')
+                          return
+                        }
+                        if (isRecording || realtimeSession.isActive) {
+                          // Encerrar sessão diretamente
+                          stopRecording()
+                        } else {
+                          startRecording()
+                        }
+                      }}
+                      disabled={realtimeSession.isConnecting || voiceUsage.isLimitReached}
+                      className={`relative w-28 h-28 sm:w-32 sm:h-32 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                        voiceUsage.isLimitReached
+                          ? 'bg-gradient-to-br from-gray-300 to-gray-400 cursor-not-allowed'
+                          : (isRecording || realtimeSession.isActive)
+                          ? 'bg-gradient-to-br from-pink-400 to-purple-500'
+                          : 'bg-gradient-to-br from-pink-300 to-purple-400 hover:from-pink-400 hover:to-purple-500'
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      {realtimeSession.isConnecting ? (
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                          className="w-8 h-8 border-3 border-white/80 border-t-transparent rounded-full"
+                        />
+                      ) : (isRecording || realtimeSession.isActive) ? (
+                        <motion.div
+                          animate={{ scale: [1, 1.1, 1] }}
+                          transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
+                          className="w-8 h-8 bg-white rounded-sm"
+                        />
+                      ) : voiceUsage.isLimitReached ? (
+                        <svg className="w-10 h-10 sm:w-12 sm:h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                        </svg>
+                      ) : (
+                        <svg className="w-10 h-10 sm:w-12 sm:h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                          <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+                        </svg>
+                      )}
+                    </motion.button>
                   </div>
+                ) : (
+                  /* Mensagem de bloqueio quando limite atingido */
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="text-center"
+                  >
+                    <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center mx-auto mb-4 opacity-50">
+                      <svg className="w-10 h-10 sm:w-12 sm:h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                      </svg>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Status suave - Estilo Calm */}
+                <div className="text-center space-y-3">
+                  {voiceUsage.isLimitReached ? (
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-[15px] text-red-600 dark:text-red-400 font-light tracking-wide"
+                    >
+                      limite de 500 minutos atingido
+                    </motion.p>
+                  ) : realtimeSession.isConnecting ? (
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-[15px] text-slate-500 dark:text-slate-400 font-light tracking-wide"
+                    >
+                      conectando...
+                    </motion.p>
+                  ) : (isRecording || realtimeSession.isActive) && !realtimeSession.isConnecting ? (
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-[15px] text-slate-600 dark:text-slate-300 font-light tracking-wide"
+                    >
+                      estou ouvindo...
+                    </motion.p>
+                  ) : (
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-[15px] text-slate-400 dark:text-slate-500 font-light tracking-wide"
+                    >
+                      toque para começar
+                    </motion.p>
+                  )}
                 </div>
+
+                {/* Botão discreto para alternar para modo texto */}
+                <motion.button
+                  onClick={() => setVoiceMode(false)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="text-sm text-gray-400 dark:text-gray-500 hover:text-pink-500 dark:hover:text-pink-400 transition-colors cursor-pointer font-light mt-4"
+                >
+                  ou escreva aqui
+                </motion.button>
               </div>
             ) : (
               /* Modo Texto - Estilo Calm com textarea expansível */
