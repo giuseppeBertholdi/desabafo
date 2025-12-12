@@ -1893,12 +1893,12 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                   </h2>
                 </motion.div>
                 
-                {/* Bola rosa centralizada - Aumentada */}
-                <div className="relative flex items-center justify-center mb-8">
+                {/* Bola rosa centralizada - Estilo Calmi */}
+                <div className="relative flex items-center justify-center mb-8 w-full">
                   <motion.div
                     animate={(isRecording || realtimeSession.isActive) ? { scale: [1, 1.1, 1] } : {}}
                     transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
-                    className={`w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 rounded-full ${
+                    className={`w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 rounded-full mx-auto ${
                       (isRecording || realtimeSession.isActive)
                         ? 'bg-gradient-to-br from-pink-400 to-purple-500'
                         : 'bg-gradient-to-br from-pink-300 to-purple-400'
