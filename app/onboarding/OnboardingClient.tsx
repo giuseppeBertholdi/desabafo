@@ -44,15 +44,35 @@ export default function OnboardingClient() {
     }
   }
 
+  const handleSkip = () => {
+    if (currentStep < totalSteps) {
+      setCurrentStep(currentStep + 1)
+    } else {
+      handleSubmit()
+    }
+  }
+
   const handleSubmit = async () => {
     setIsLoading(true)
     try {
+      // Usar valores padrão para campos vazios
+      const submitData = {
+        nickname: data.nickname?.trim() || 'amigo',
+        preferredName: data.preferredName?.trim() || data.nickname?.trim() || 'você',
+        age: data.age || '',
+        gender: data.gender || '',
+        profession: data.profession || '',
+        slangLevel: data.slangLevel || 'moderado',
+        playfulness: data.playfulness || 'equilibrado',
+        formality: data.formality || 'informal'
+      }
+
       const response = await fetch('/api/onboarding', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(submitData),
       })
 
       if (response.ok) {
@@ -138,7 +158,14 @@ export default function OnboardingClient() {
                 </div>
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-between items-center">
+                <button
+                  onClick={handleSkip}
+                  className="px-6 py-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 font-light transition-colors cursor-pointer text-sm"
+                  type="button"
+                >
+                  pular
+                </button>
                 <button
                   onClick={handleNext}
                   disabled={!data.nickname.trim()}
@@ -212,14 +239,23 @@ export default function OnboardingClient() {
                 </div>
               </div>
 
-              <div className="flex justify-between">
-                <button
-                  onClick={handleBack}
-                  className="px-8 py-3 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-light hover:bg-gray-50 dark:hover:bg-gray-800 transition-all cursor-pointer"
-                  type="button"
-                >
-                  voltar
-                </button>
+              <div className="flex justify-between items-center">
+                <div className="flex gap-4">
+                  <button
+                    onClick={handleBack}
+                    className="px-8 py-3 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-light hover:bg-gray-50 dark:hover:bg-gray-800 transition-all cursor-pointer"
+                    type="button"
+                  >
+                    voltar
+                  </button>
+                  <button
+                    onClick={handleSkip}
+                    className="px-6 py-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 font-light transition-colors cursor-pointer text-sm"
+                    type="button"
+                  >
+                    pular
+                  </button>
+                </div>
                 <button
                   onClick={handleNext}
                   disabled={!data.age}
@@ -274,14 +310,23 @@ export default function OnboardingClient() {
                 ))}
               </div>
 
-              <div className="flex justify-between">
-                <button
-                  onClick={handleBack}
-                  className="px-8 py-3 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-light hover:bg-gray-50 dark:hover:bg-gray-800 transition-all cursor-pointer"
-                  type="button"
-                >
-                  voltar
-                </button>
+              <div className="flex justify-between items-center">
+                <div className="flex gap-4">
+                  <button
+                    onClick={handleBack}
+                    className="px-8 py-3 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-light hover:bg-gray-50 dark:hover:bg-gray-800 transition-all cursor-pointer"
+                    type="button"
+                  >
+                    voltar
+                  </button>
+                  <button
+                    onClick={handleSkip}
+                    className="px-6 py-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 font-light transition-colors cursor-pointer text-sm"
+                    type="button"
+                  >
+                    pular
+                  </button>
+                </div>
                 <button
                   onClick={handleNext}
                   className="px-8 py-3 bg-pink-600 text-white rounded-lg font-light hover:bg-pink-700 transition-all cursor-pointer"
@@ -367,14 +412,23 @@ export default function OnboardingClient() {
                 </div>
               </div>
 
-              <div className="flex justify-between">
-                <button
-                  onClick={handleBack}
-                  className="px-8 py-3 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-light hover:bg-gray-50 dark:hover:bg-gray-800 transition-all cursor-pointer"
-                  type="button"
-                >
-                  voltar
-                </button>
+              <div className="flex justify-between items-center">
+                <div className="flex gap-4">
+                  <button
+                    onClick={handleBack}
+                    className="px-8 py-3 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-light hover:bg-gray-50 dark:hover:bg-gray-800 transition-all cursor-pointer"
+                    type="button"
+                  >
+                    voltar
+                  </button>
+                  <button
+                    onClick={handleSkip}
+                    className="px-6 py-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 font-light transition-colors cursor-pointer text-sm"
+                    type="button"
+                  >
+                    pular tudo
+                  </button>
+                </div>
                 <button
                   onClick={handleSubmit}
                   disabled={isLoading}

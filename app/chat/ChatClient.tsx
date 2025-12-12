@@ -481,6 +481,8 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
   const [isLoadingUsage, setIsLoadingUsage] = useState(true)
   const voiceSessionStartTime = useRef<number | null>(null)
   const voiceUsageTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const [showEndSessionModal, setShowEndSessionModal] = useState(false)
+  const [showEndVoiceSessionModal, setShowEndVoiceSessionModal] = useState(false)
 
   // Hook para Realtime Mini (substitui Google Cloud quando voiceMode está ativo)
   const realtimeSession = useRealtimeMini({
@@ -1573,6 +1575,45 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
     inputRef.current?.focus()
   }
 
+  const handleEndSession = async () => {
+    if (!sessionId) return
+    
+    try {
+      // Adicionar mensagem de fim de sessão
+      const sessionEndMessage: Message = {
+        id: `session-end-${Date.now()}`,
+        role: 'system',
+        content: 'sessão encerrada',
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, sessionEndMessage])
+      
+      // Salvar sessão finalizada no banco
+      await fetch('/api/sessions', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          sessionId: sessionId, 
+          messages: [...messages, sessionEndMessage].map(m => ({ role: m.role, content: m.content }))
+        })
+      })
+      
+      // Redirecionar para histórico
+      router.push('/history')
+    } catch (error) {
+      console.error('Erro ao encerrar sessão:', error)
+      showError('Erro ao encerrar sessão. Tente novamente.')
+      setShowEndSessionModal(false)
+    }
+  }
+
+  const handleEndVoiceSession = () => {
+    if (isRecording || realtimeSession.isActive) {
+      stopRecording()
+      setShowEndVoiceSessionModal(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 relative transition-colors">
       {/* Logo desabafo no topo - Minimalista */}
@@ -1920,8 +1961,8 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                       return
                     }
                     if (isRecording || realtimeSession.isActive) {
-                      // Encerrar sessão diretamente
-                      stopRecording()
+                      // Mostrar modal de confirmação
+                      setShowEndVoiceSessionModal(true)
                     } else {
                       startRecording()
                     }
@@ -1946,6 +1987,24 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
               /* Modo Texto - Estilo Calm com textarea expansível */
               <>
                 <div className="relative bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-full border border-slate-200/60 dark:border-slate-700/60 hover:border-rose-300/60 dark:hover:border-rose-700/60 transition-all shadow-sm min-h-[48px] sm:min-h-[56px] md:min-h-[64px] flex items-end" id="chat-input-container">
+                  {/* Botão X para encerrar sessão - Canto esquerdo */}
+                  {sessionId && !temporaryChat && (
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      onClick={() => setShowEndSessionModal(true)}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      className="absolute left-1.5 sm:left-2 md:left-2.5 bottom-1.5 sm:bottom-2 md:bottom-2.5 w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-red-500 hover:text-white text-gray-600 dark:text-gray-400 transition-all flex items-center justify-center cursor-pointer shadow-sm hover:shadow-md flex-shrink-0 z-10"
+                      aria-label="Encerrar sessão"
+                      type="button"
+                    >
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </motion.button>
+                  )}
+
                   {/* Textarea que cresce para cima */}
                   <textarea
                     ref={inputRef}
@@ -1976,7 +2035,11 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                       overflow: 'hidden',
                       maxHeight: '200px',
                     }}
-                    className="w-full bg-transparent rounded-full py-3 sm:py-4 md:py-5 px-4 sm:px-6 md:px-7 pr-14 sm:pr-16 md:pr-20 text-sm sm:text-[15px] md:text-base text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none font-light tracking-wide disabled:opacity-50 disabled:cursor-not-allowed leading-relaxed"
+                    className={`w-full bg-transparent rounded-full py-3 sm:py-4 md:py-5 text-sm sm:text-[15px] md:text-base text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none font-light tracking-wide disabled:opacity-50 disabled:cursor-not-allowed leading-relaxed ${
+                      sessionId && !temporaryChat 
+                        ? 'px-12 sm:px-14 md:px-16 pr-14 sm:pr-16 md:pr-20' 
+                        : 'px-4 sm:px-6 md:px-7 pr-14 sm:pr-16 md:pr-20'
+                    }`}
                   />
 
                   {/* Botão enviar - Estilo Calm */}
@@ -2041,6 +2104,97 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
         )}
       </AnimatePresence>
 
+      {/* Modal de confirmação - Encerrar sessão (texto) */}
+      <AnimatePresence>
+        {showEndSessionModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowEndSessionModal(false)}
+              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="fixed inset-0 z-[101] flex items-center justify-center p-4 pointer-events-none"
+            >
+              <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 sm:p-10 shadow-2xl max-w-md w-full pointer-events-auto">
+                <h2 className="text-2xl font-light text-gray-900 dark:text-white mb-4 text-center">
+                  encerrar sessão?
+                </h2>
+                <p className="text-base text-gray-500 dark:text-gray-400 font-light text-center mb-8">
+                  você pode ver o resumo da conversa no histórico depois
+                </p>
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setShowEndSessionModal(false)}
+                    className="flex-1 py-3 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-light hover:bg-gray-50 dark:hover:bg-gray-700 transition-all cursor-pointer text-base"
+                    type="button"
+                  >
+                    cancelar
+                  </button>
+                  <button
+                    onClick={handleEndSession}
+                    className="flex-1 py-3 bg-pink-600 text-white rounded-xl font-light hover:bg-pink-700 transition-all cursor-pointer text-base"
+                    type="button"
+                  >
+                    encerrar
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de confirmação - Terminar sessão (voz) */}
+      <AnimatePresence>
+        {showEndVoiceSessionModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowEndVoiceSessionModal(false)}
+              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="fixed inset-0 z-[101] flex items-center justify-center p-4 pointer-events-none"
+            >
+              <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 sm:p-10 shadow-2xl max-w-md w-full pointer-events-auto">
+                <h2 className="text-2xl font-light text-gray-900 dark:text-white mb-4 text-center">
+                  você tem 100% de certeza?
+                </h2>
+                <p className="text-base text-gray-500 dark:text-gray-400 font-light text-center mb-8">
+                  tem certeza que quer terminar a sessão de voz?
+                </p>
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setShowEndVoiceSessionModal(false)}
+                    className="flex-1 py-3 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-light hover:bg-gray-50 dark:hover:bg-gray-700 transition-all cursor-pointer text-base"
+                    type="button"
+                  >
+                    cancelar
+                  </button>
+                  <button
+                    onClick={handleEndVoiceSession}
+                    className="flex-1 py-3 bg-red-500 text-white rounded-xl font-light hover:bg-red-600 transition-all cursor-pointer text-base"
+                    type="button"
+                  >
+                    terminar
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
     </div>
   )
