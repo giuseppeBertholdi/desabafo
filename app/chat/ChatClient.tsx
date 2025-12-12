@@ -1598,8 +1598,8 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
         })
       })
       
-      // Redirecionar para histórico
-      router.push('/history')
+      // Redirecionar para histórico com a sessão aberta
+      router.push(`/history?sessionId=${sessionId}`)
     } catch (error) {
       console.error('Erro ao encerrar sessão:', error)
       showError('Erro ao encerrar sessão. Tente novamente.')

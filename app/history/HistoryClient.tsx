@@ -100,6 +100,23 @@ export default function HistoryClient() {
     loadSessions()
   }, [])
 
+  // Verificar sessionId na URL após carregar sessões
+  useEffect(() => {
+    if (typeof window !== 'undefined' && sessions.length > 0) {
+      const urlParams = new URLSearchParams(window.location.search)
+      const sessionIdFromUrl = urlParams.get('sessionId')
+      if (sessionIdFromUrl && !selectedSession) {
+        // Verificar se a sessão existe na lista
+        const sessionExists = sessions.some(s => s.id === sessionIdFromUrl)
+        if (sessionExists) {
+          setSelectedSession(sessionIdFromUrl)
+          // Limpar query param da URL
+          window.history.replaceState({}, '', '/history')
+        }
+      }
+    }
+  }, [sessions, selectedSession])
+
   useEffect(() => {
     if (selectedSession) {
       loadMessages(selectedSession)
