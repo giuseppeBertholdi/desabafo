@@ -7,6 +7,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import Sidebar from '@/components/Sidebar'
 import { useUserPlan } from '@/lib/getUserPlanClient'
 import MessageUsageBar from '@/components/MessageUsageBar'
+import VoiceUsageBar from '@/components/VoiceUsageBar'
 import AccessibilityControls from '@/components/AccessibilityControls'
 
 export default function AccountClient() {
@@ -28,6 +29,13 @@ export default function AccountClient() {
     isLimitReached: false
   })
   const [isLoadingUsage, setIsLoadingUsage] = useState(true)
+  const [voiceUsage, setVoiceUsage] = useState({
+    minutesUsed: 0,
+    maxMinutes: 500,
+    isLimitReached: false,
+    remainingMinutes: 500
+  })
+  const [isLoadingVoiceUsage, setIsLoadingVoiceUsage] = useState(true)
   
   // Personalização da IA
   const [isEditingPersonalization, setIsEditingPersonalization] = useState(false)
@@ -79,6 +87,9 @@ export default function AccountClient() {
     checkSpotifyConnection()
     if (plan === 'free') {
       loadMessageUsage()
+    }
+    if (plan === 'pro') {
+      loadVoiceUsage()
     }
 
     // Verificar se veio do callback do Spotify
@@ -183,6 +194,26 @@ export default function AccountClient() {
       console.error('Erro ao buscar uso de mensagens:', error)
     } finally {
       setIsLoadingUsage(false)
+    }
+  }
+
+  const loadVoiceUsage = async () => {
+    try {
+      setIsLoadingVoiceUsage(true)
+      const response = await fetch('/api/voice/usage')
+      if (response.ok) {
+        const data = await response.json()
+        setVoiceUsage({
+          minutesUsed: data.minutesUsed,
+          maxMinutes: data.maxMinutes,
+          isLimitReached: data.isLimitReached,
+          remainingMinutes: data.remainingMinutes
+        })
+      }
+    } catch (error) {
+      console.error('Erro ao buscar uso de voz:', error)
+    } finally {
+      setIsLoadingVoiceUsage(false)
     }
   }
 
@@ -541,8 +572,24 @@ export default function AccountClient() {
             </motion.div>
           )}
 
+          {/* Uso de Voz (apenas plano pro) */}
+          {plan === 'pro' && !isLoadingVoiceUsage && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.25 }}
+              className="mb-12"
+            >
+              <VoiceUsageBar
+                minutesUsed={voiceUsage.minutesUsed}
+                maxMinutes={voiceUsage.maxMinutes}
+                isLimitReached={voiceUsage.isLimitReached}
+              />
+            </motion.div>
+          )}
+
           {/* Divider sutil */}
-          {plan === 'free' && <div className="border-t border-gray-100 dark:border-gray-800 my-12" />}
+          {(plan === 'free' || plan === 'pro') && <div className="border-t border-gray-100 dark:border-gray-800 my-12" />}
 
           {/* Configurações */}
           <div className="space-y-6 mb-12">
