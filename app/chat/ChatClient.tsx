@@ -1620,10 +1620,9 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
           </motion.div>
         )}
 
-        {/* Switches no canto superior direito - Ocultar no modo voz */}
-        {!voiceMode && (
-          <div className="flex flex-col items-end gap-1.5 sm:gap-2.5">
-          {/* Modo Melhor Amigo */}
+        {/* Switches no canto superior direito */}
+        <div className="flex flex-col items-end gap-1.5 sm:gap-2.5">
+          {/* Modo Melhor Amigo - Visível em todos os modos */}
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -1654,50 +1653,53 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
             </button>
           </motion.div>
           
-          {/* Chat Temporário */}
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.05 }}
-            className="flex items-center gap-1.5 sm:gap-2.5 px-2 sm:px-3.5 py-1 sm:py-1.5 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm"
-          >
-            <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 font-light whitespace-nowrap">temporário</span>
-            <button
-              onClick={() => {
-                const newTemporary = !temporaryChat
-                setTemporaryChat(newTemporary)
-                if (newTemporary) {
-                  // Se ativou temporário, limpar sessão atual
-                  setSessionId(null)
-                }
-              }}
-              className={`relative w-8 sm:w-10 h-4 sm:h-5 rounded-full transition-colors cursor-pointer ${
-                temporaryChat ? 'bg-pink-500' : 'bg-gray-300 dark:bg-gray-600'
-              }`}
-              type="button"
-            >
-              <div
-                className={`absolute top-0.5 left-0.5 w-3 sm:w-4 h-3 sm:h-4 bg-white rounded-full transition-transform shadow-sm ${
-                  temporaryChat ? 'translate-x-4 sm:translate-x-5' : 'translate-x-0'
-                }`}
-              />
-            </button>
-          </motion.div>
+          {/* Chat Temporário - Apenas no modo texto */}
+          {!voiceMode && (
+            <>
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.05 }}
+                className="flex items-center gap-1.5 sm:gap-2.5 px-2 sm:px-3.5 py-1 sm:py-1.5 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm"
+              >
+                <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 font-light whitespace-nowrap">temporário</span>
+                <button
+                  onClick={() => {
+                    const newTemporary = !temporaryChat
+                    setTemporaryChat(newTemporary)
+                    if (newTemporary) {
+                      // Se ativou temporário, limpar sessão atual
+                      setSessionId(null)
+                    }
+                  }}
+                  className={`relative w-8 sm:w-10 h-4 sm:h-5 rounded-full transition-colors cursor-pointer ${
+                    temporaryChat ? 'bg-pink-500' : 'bg-gray-300 dark:bg-gray-600'
+                  }`}
+                  type="button"
+                >
+                  <div
+                    className={`absolute top-0.5 left-0.5 w-3 sm:w-4 h-3 sm:h-4 bg-white rounded-full transition-transform shadow-sm ${
+                      temporaryChat ? 'translate-x-4 sm:translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </motion.div>
 
-          {/* Botão para terminar conversa temporária (só aparece se estiver ativo) */}
-          {temporaryChat && messages.length > 1 && (
-            <motion.button
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              onClick={handleEndTemporaryChat}
-              className="mt-1 px-2 sm:px-3.5 py-1 sm:py-1.5 text-[10px] sm:text-xs text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-full font-light hover:bg-red-50 dark:hover:bg-red-900/20 transition-all cursor-pointer shadow-sm whitespace-nowrap"
-              type="button"
-            >
-              terminar
-            </motion.button>
+              {/* Botão para terminar conversa temporária (só aparece se estiver ativo) */}
+              {temporaryChat && messages.length > 1 && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  onClick={handleEndTemporaryChat}
+                  className="mt-1 px-2 sm:px-3.5 py-1 sm:py-1.5 text-[10px] sm:text-xs text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-full font-light hover:bg-red-50 dark:hover:bg-red-900/20 transition-all cursor-pointer shadow-sm whitespace-nowrap"
+                  type="button"
+                >
+                  terminar
+                </motion.button>
+              )}
+            </>
           )}
-          </div>
-        )}
+        </div>
       </div>
 
       {/* Chat Container - Estilo Calm */}
@@ -1891,37 +1893,6 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                   <h2 className="text-2xl sm:text-3xl font-light text-slate-700 dark:text-slate-200 tracking-wide">
                     converse com a nossa IA Luna
                   </h2>
-                </motion.div>
-
-                {/* Switch Melhor Amigo - Modo Voz */}
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full border border-gray-200 dark:border-gray-700 shadow-sm mb-2"
-                >
-                  <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-light whitespace-nowrap">melhor amigo</span>
-                  <button
-                    onClick={() => {
-                      const newMode = !bestFriendMode
-                      setBestFriendMode(newMode)
-                      if (newMode) {
-                        setShowEmojiAnimation(true)
-                        setTimeout(() => {
-                          setShowEmojiAnimation(false)
-                        }, 2000)
-                      }
-                    }}
-                    className={`relative w-10 sm:w-12 h-5 sm:h-6 rounded-full transition-colors cursor-pointer ${
-                        bestFriendMode ? 'bg-pink-500' : 'bg-gray-300 dark:bg-gray-600'
-                      }`}
-                    type="button"
-                  >
-                    <div
-                      className={`absolute top-0.5 left-0.5 w-4 sm:w-5 h-4 sm:h-5 bg-white rounded-full transition-transform shadow-sm ${
-                        bestFriendMode ? 'translate-x-5 sm:translate-x-6' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
                 </motion.div>
                 
                 {/* Bola rosa centralizada - Estilo Calmi */}
