@@ -1894,7 +1894,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                 </motion.div>
                 
                 {/* Bola rosa centralizada - Estilo Calmi */}
-                <div className="relative flex items-center justify-center w-full mb-12">
+                <div className="relative flex items-center justify-center w-full mb-40">
                   <motion.div
                     animate={(isRecording || realtimeSession.isActive) ? { scale: [1, 1.1, 1] } : {}}
                     transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
