@@ -1949,39 +1949,40 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                   />
                 </div>
 
-                {/* Botão iniciar/terminar sessão */}
-                <motion.button
-                  whileHover={!(isRecording || realtimeSession.isActive || realtimeSession.isConnecting || voiceUsage.isLimitReached) ? { scale: 1.05 } : {}}
-                  whileTap={!(isRecording || realtimeSession.isActive || realtimeSession.isConnecting || voiceUsage.isLimitReached) ? { scale: 0.95 } : {}}
-                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (voiceUsage.isLimitReached) {
-                      showError('Você atingiu o limite de 500 minutos de voz deste mês!')
-                      return
-                    }
-                    if (isRecording || realtimeSession.isActive) {
-                      // Mostrar modal de confirmação
-                      setShowEndVoiceSessionModal(true)
-                    } else {
-                      startRecording()
-                    }
-                  }}
-                  disabled={realtimeSession.isConnecting || voiceUsage.isLimitReached}
-                  className={`px-8 py-3 rounded-full font-light transition-all cursor-pointer text-base ${
-                    voiceUsage.isLimitReached
-                      ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                {/* Botão iniciar/terminar sessão - Abaixado */}
+                <div className="mt-32">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      if (voiceUsage.isLimitReached) {
+                        showError('Você atingiu o limite de 500 minutos de voz deste mês!')
+                        return
+                      }
+                      if (isRecording || realtimeSession.isActive) {
+                        // Apenas mostrar modal de confirmação - NÃO encerrar ainda
+                        setShowEndVoiceSessionModal(true)
+                      } else {
+                        startRecording()
+                      }
+                    }}
+                    disabled={realtimeSession.isConnecting || voiceUsage.isLimitReached}
+                    className={`px-8 py-3 rounded-full font-light transition-all cursor-pointer text-base ${
+                      voiceUsage.isLimitReached
+                        ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                        : (isRecording || realtimeSession.isActive)
+                        ? 'bg-red-500 hover:bg-red-600 text-white'
+                        : 'bg-pink-500 hover:bg-pink-600 text-white'
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    type="button"
+                  >
+                    {realtimeSession.isConnecting
+                      ? 'conectando...'
                       : (isRecording || realtimeSession.isActive)
-                      ? 'bg-red-500 hover:bg-red-600 text-white'
-                      : 'bg-pink-500 hover:bg-pink-600 text-white'
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  {realtimeSession.isConnecting
-                    ? 'conectando...'
-                    : (isRecording || realtimeSession.isActive)
-                    ? 'terminar sessão'
-                    : 'iniciar sessão'}
-                </motion.button>
+                      ? 'terminar sessão'
+                      : 'iniciar sessão'}
+                  </button>
+                </div>
               </div>
             ) : (
               /* Modo Texto - Estilo Calm com textarea expansível */
