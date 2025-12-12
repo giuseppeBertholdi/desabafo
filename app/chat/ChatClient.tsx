@@ -1701,7 +1701,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
       </div>
 
       {/* Chat Container - Estilo Calm */}
-      <div className="flex items-end justify-center min-h-screen px-3 sm:px-4 md:px-6 pb-20 sm:pb-24 md:pb-32 bg-gradient-to-b from-transparent via-slate-50/30 to-slate-50/50 dark:via-slate-900/20 dark:to-slate-900/40">
+      <div className={`flex ${voiceMode ? 'items-center' : 'items-end'} justify-center min-h-screen px-3 sm:px-4 md:px-6 ${voiceMode ? 'pb-0' : 'pb-20 sm:pb-24 md:pb-32'} bg-gradient-to-b from-transparent via-slate-50/30 to-slate-50/50 dark:via-slate-900/20 dark:to-slate-900/40`}>
         <div className="w-full max-w-2xl">
           
           {/* Messages - Estilo Calm com mais espaçamento */}
@@ -1881,12 +1881,12 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
           <div className="relative">
             {voiceMode && plan === 'pro' ? ( // Apenas Pro tem acesso a voz
               /* Modo Voz - Estilo Calm */
-              <div className="flex flex-col items-center justify-center min-h-[400px] space-y-8">
+              <div className="flex flex-col items-center justify-center space-y-6 -mt-20">
                 {/* Título no topo */}
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-center mb-12"
+                  className="text-center mb-4"
                 >
                   <h2 className="text-2xl sm:text-3xl font-light text-slate-700 dark:text-slate-200 tracking-wide">
                     converse com a nossa IA Luna
@@ -1894,7 +1894,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                 </motion.div>
                 
                 {/* Bola rosa centralizada - Estilo Calmi */}
-                <div className="relative flex items-center justify-center mb-8 w-full">
+                <div className="relative flex items-center justify-center w-full">
                   <motion.div
                     animate={(isRecording || realtimeSession.isActive) ? { scale: [1, 1.1, 1] } : {}}
                     transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
