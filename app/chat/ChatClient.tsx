@@ -1881,24 +1881,24 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
           <div className="relative">
             {voiceMode && plan === 'pro' ? ( // Apenas Pro tem acesso a voz
               /* Modo Voz - Estilo Calm */
-              <div className="flex flex-col items-center justify-center min-h-[300px] space-y-6">
-                {/* Título centralizado no topo */}
+              <div className="flex flex-col items-center justify-center min-h-[400px] space-y-8">
+                {/* Título no topo */}
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-center mb-8"
+                  className="text-center mb-12"
                 >
                   <h2 className="text-2xl sm:text-3xl font-light text-slate-700 dark:text-slate-200 tracking-wide">
                     converse com a nossa IA Luna
                   </h2>
                 </motion.div>
                 
-                {/* Bola rosa centralizada */}
-                <div className="relative flex items-center justify-center mb-6">
+                {/* Bola rosa centralizada - Aumentada */}
+                <div className="relative flex items-center justify-center mb-8">
                   <motion.div
                     animate={(isRecording || realtimeSession.isActive) ? { scale: [1, 1.1, 1] } : {}}
                     transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
-                    className={`w-28 h-28 sm:w-32 sm:h-32 rounded-full ${
+                    className={`w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 rounded-full ${
                       (isRecording || realtimeSession.isActive)
                         ? 'bg-gradient-to-br from-pink-400 to-purple-500'
                         : 'bg-gradient-to-br from-pink-300 to-purple-400'
