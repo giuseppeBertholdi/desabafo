@@ -1892,6 +1892,37 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                     converse com a nossa IA Luna
                   </h2>
                 </motion.div>
+
+                {/* Switch Melhor Amigo - Modo Voz */}
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full border border-gray-200 dark:border-gray-700 shadow-sm mb-2"
+                >
+                  <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-light whitespace-nowrap">melhor amigo</span>
+                  <button
+                    onClick={() => {
+                      const newMode = !bestFriendMode
+                      setBestFriendMode(newMode)
+                      if (newMode) {
+                        setShowEmojiAnimation(true)
+                        setTimeout(() => {
+                          setShowEmojiAnimation(false)
+                        }, 2000)
+                      }
+                    }}
+                    className={`relative w-10 sm:w-12 h-5 sm:h-6 rounded-full transition-colors cursor-pointer ${
+                        bestFriendMode ? 'bg-pink-500' : 'bg-gray-300 dark:bg-gray-600'
+                      }`}
+                    type="button"
+                  >
+                    <div
+                      className={`absolute top-0.5 left-0.5 w-4 sm:w-5 h-4 sm:h-5 bg-white rounded-full transition-transform shadow-sm ${
+                        bestFriendMode ? 'translate-x-5 sm:translate-x-6' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </motion.div>
                 
                 {/* Bola rosa centralizada - Estilo Calmi */}
                 <div className="relative flex items-center justify-center w-full mb-40">
