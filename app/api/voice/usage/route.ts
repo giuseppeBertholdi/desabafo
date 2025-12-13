@@ -31,12 +31,14 @@ export async function GET() {
       return NextResponse.json({ error: 'Erro ao buscar uso de voz' }, { status: 500 })
     }
 
-    const minutesUsed = data?.minutes_used || 0
-    const remainingMinutes = Math.max(0, MAX_VOICE_MINUTES - minutesUsed)
-    const isLimitReached = minutesUsed >= MAX_VOICE_MINUTES
+    const minutesUsed = Number(data?.minutes_used || 0)
+    // Garantir que nunca ultrapasse o limite (caso haja algum problema no banco)
+    const cappedMinutes = Math.min(minutesUsed, MAX_VOICE_MINUTES)
+    const remainingMinutes = Math.max(0, MAX_VOICE_MINUTES - cappedMinutes)
+    const isLimitReached = cappedMinutes >= MAX_VOICE_MINUTES
 
     return NextResponse.json({
-      minutesUsed: Number(minutesUsed),
+      minutesUsed: Number(cappedMinutes),
       maxMinutes: MAX_VOICE_MINUTES,
       remainingMinutes: Number(remainingMinutes),
       isLimitReached,
@@ -76,15 +78,30 @@ export async function POST(request: Request) {
       .eq('month_year', monthYear)
       .single()
 
-    const currentMinutes = existingData?.minutes_used || 0
-    const newTotal = Number(currentMinutes) + Number(minutes)
-
-    // Verificar se ultrapassou o limite
-    if (newTotal > MAX_VOICE_MINUTES) {
+    const currentMinutes = Number(existingData?.minutes_used || 0)
+    
+    // Verificar se já atingiu o limite ANTES de adicionar novos minutos
+    if (currentMinutes >= MAX_VOICE_MINUTES) {
       return NextResponse.json({
         error: 'Limite de minutos atingido',
-        minutesUsed: Number(currentMinutes),
+        minutesUsed: currentMinutes,
         maxMinutes: MAX_VOICE_MINUTES,
+        remainingMinutes: 0,
+        isLimitReached: true
+      }, { status: 403 })
+    }
+
+    const minutesToAdd = Number(minutes)
+    const newTotal = currentMinutes + minutesToAdd
+
+    // Verificar se ultrapassaria o limite (RÍGIDO - não permite ultrapassar)
+    if (newTotal > MAX_VOICE_MINUTES) {
+      // Não permite ultrapassar - retorna erro
+      return NextResponse.json({
+        error: 'Limite de minutos atingido',
+        minutesUsed: currentMinutes,
+        maxMinutes: MAX_VOICE_MINUTES,
+        remainingMinutes: Math.max(0, MAX_VOICE_MINUTES - currentMinutes),
         isLimitReached: true
       }, { status: 403 })
     }

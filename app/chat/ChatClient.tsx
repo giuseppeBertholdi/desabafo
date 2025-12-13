@@ -482,7 +482,6 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
   const voiceSessionStartTime = useRef<number | null>(null)
   const voiceUsageTimerRef = useRef<NodeJS.Timeout | null>(null)
   const [showEndSessionModal, setShowEndSessionModal] = useState(false)
-  const [showEndVoiceSessionModal, setShowEndVoiceSessionModal] = useState(false)
 
   // Hook para Realtime Mini (substitui Google Cloud quando voiceMode está ativo)
   const realtimeSession = useRealtimeMini({
@@ -683,6 +682,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
   // Registrar uso de voz (adicionar minutos)
   const recordVoiceUsage = useCallback(async (minutes: number) => {
     try {
+      console.log('Registrando uso de voz:', minutes, 'minutos')
       const response = await fetch('/api/voice/usage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -691,6 +691,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
       
       if (response.ok) {
         const data = await response.json()
+        console.log('Uso de voz registrado com sucesso:', data)
         setVoiceUsage({
           minutesUsed: data.minutesUsed,
           maxMinutes: data.maxMinutes,
@@ -708,6 +709,7 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
       } else if (response.status === 403) {
         // Limite atingido
         const data = await response.json()
+        console.log('Limite de voz atingido:', data)
         setVoiceUsage({
           minutesUsed: data.minutesUsed,
           maxMinutes: data.maxMinutes,
@@ -718,6 +720,8 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
         if (realtimeSession.isActive) {
           stopRecording()
         }
+      } else {
+        console.error('Erro ao registrar uso de voz:', response.status, await response.text())
       }
     } catch (error) {
       console.error('Erro ao registrar uso de voz:', error)
@@ -948,18 +952,21 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
       }
       
       // Iniciar timer para registrar uso a cada minuto
+      let lastRecordedMinute = 0
       voiceUsageTimerRef.current = setInterval(() => {
         if (voiceSessionStartTime.current) {
           const elapsedMs = Date.now() - voiceSessionStartTime.current
           const elapsedMinutes = elapsedMs / (1000 * 60)
           
-          // Registrar a cada 1 minuto
-          if (elapsedMinutes >= 1) {
-            recordVoiceUsage(1) // Registrar 1 minuto
-            voiceSessionStartTime.current = Date.now() // Reset timer
+          // Registrar a cada 1 minuto completo
+          const currentMinute = Math.floor(elapsedMinutes)
+          if (currentMinute > lastRecordedMinute) {
+            const minutesToRecord = currentMinute - lastRecordedMinute
+            recordVoiceUsage(minutesToRecord) // Registrar minutos completos
+            lastRecordedMinute = currentMinute
           }
         }
-      }, 5000) // Verificar a cada 5 segundos
+      }, 10000) // Verificar a cada 10 segundos
     } catch (error) {
       console.error('Erro ao iniciar gravação:', error)
       showError('Não foi possível acessar o microfone. Verifique as permissões.')
@@ -987,13 +994,18 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
         const elapsedMs = Date.now() - voiceSessionStartTime.current
         const elapsedMinutes = elapsedMs / (1000 * 60)
         
+        // Calcular minutos completos já registrados
+        const minutesAlreadyRecorded = Math.floor(elapsedMinutes)
+        const remainingSeconds = (elapsedMinutes - minutesAlreadyRecorded) * 60
+        
         // Registrar minutos restantes se >= 0.1 minuto (6 segundos)
-        if (elapsedMinutes >= 0.1) {
-          recordVoiceUsage(Number(elapsedMinutes.toFixed(2))).catch(err => {
+        if (remainingSeconds >= 6) {
+          const remainingMinutes = remainingSeconds / 60
+          recordVoiceUsage(Number(remainingMinutes.toFixed(2))).catch(err => {
             console.error('Erro ao registrar uso de voz (pode estar offline):', err)
             // Salvar para tentar depois
             const pendingUsage = {
-              minutes: Number(elapsedMinutes.toFixed(2)),
+              minutes: Number(remainingMinutes.toFixed(2)),
               timestamp: Date.now()
             }
             const existing = JSON.parse(localStorage.getItem('pendingVoiceUsage') || '[]')
@@ -1607,12 +1619,6 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
     }
   }
 
-  const handleEndVoiceSession = () => {
-    if (isRecording || realtimeSession.isActive) {
-      stopRecording()
-      setShowEndVoiceSessionModal(false)
-    }
-  }
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 relative transition-colors">
@@ -1960,8 +1966,8 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
                         return
                       }
                       if (isRecording || realtimeSession.isActive) {
-                        // Apenas mostrar modal de confirmação - NÃO encerrar ainda
-                        setShowEndVoiceSessionModal(true)
+                        // Encerrar sessão diretamente
+                        stopRecording()
                       } else {
                         startRecording()
                       }
@@ -2151,51 +2157,6 @@ export default function ChatClient({ firstName, tema, voiceMode: initialVoiceMod
         )}
       </AnimatePresence>
 
-      {/* Modal de confirmação - Terminar sessão (voz) */}
-      <AnimatePresence>
-        {showEndVoiceSessionModal && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowEndVoiceSessionModal(false)}
-              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="fixed inset-0 z-[101] flex items-center justify-center p-4 pointer-events-none"
-            >
-              <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 sm:p-10 shadow-2xl max-w-md w-full pointer-events-auto">
-                <h2 className="text-2xl font-light text-gray-900 dark:text-white mb-4 text-center">
-                  você tem 100% de certeza?
-                </h2>
-                <p className="text-base text-gray-500 dark:text-gray-400 font-light text-center mb-8">
-                  tem certeza que quer terminar a sessão de voz?
-                </p>
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => setShowEndVoiceSessionModal(false)}
-                    className="flex-1 py-3 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-light hover:bg-gray-50 dark:hover:bg-gray-700 transition-all cursor-pointer text-base"
-                    type="button"
-                  >
-                    cancelar
-                  </button>
-                  <button
-                    onClick={handleEndVoiceSession}
-                    className="flex-1 py-3 bg-red-500 text-white rounded-xl font-light hover:bg-red-600 transition-all cursor-pointer text-base"
-                    type="button"
-                  >
-                    terminar
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
 
     </div>
   )

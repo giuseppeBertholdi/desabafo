@@ -100,6 +100,18 @@ export default function AccountClient() {
       // Recarregar status do Spotify
       setTimeout(() => checkSpotifyConnection(), 500)
     }
+
+    // Recarregar uso de voz quando a página ganha foco (para atualizar após sessão)
+    const handleFocus = () => {
+      if (plan === 'pro') {
+        loadVoiceUsage()
+      }
+    }
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+    }
   }, [plan])
 
   const checkSpotifyConnection = async () => {
