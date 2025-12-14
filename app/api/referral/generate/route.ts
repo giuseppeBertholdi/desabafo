@@ -30,7 +30,7 @@ export async function POST() {
     }
 
     // Gerar novo código único
-    let referralCode: string
+    let referralCode: string = ''
     let isUnique = false
 
     while (!isUnique) {
