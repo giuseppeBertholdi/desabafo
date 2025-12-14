@@ -239,6 +239,55 @@ export default function AccountClient() {
     }
   }
 
+  const loadReferralStats = async () => {
+    try {
+      setIsLoadingReferral(true)
+      const response = await fetch('/api/referral/stats')
+      if (response.ok) {
+        const data = await response.json()
+        setReferralStats({
+          referralCode: data.referralCode,
+          referralUrl: data.referralUrl,
+          totalReferrals: data.totalReferrals,
+          completedReferrals: data.completedReferrals,
+          remainingReferrals: data.remainingReferrals
+        })
+      }
+    } catch (error) {
+      console.error('Erro ao buscar estatísticas de referência:', error)
+    } finally {
+      setIsLoadingReferral(false)
+    }
+  }
+
+  const generateReferralCode = async () => {
+    try {
+      const response = await fetch('/api/referral/generate', {
+        method: 'POST'
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setReferralStats(prev => ({
+          ...prev,
+          referralCode: data.referralCode,
+          referralUrl: data.referralUrl
+        }))
+      }
+    } catch (error) {
+      console.error('Erro ao gerar código de referência:', error)
+    }
+  }
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (error) {
+      console.error('Erro ao copiar:', error)
+    }
+  }
+
   const handleSyncSubscription = async () => {
     setIsSyncingSubscription(true)
     try {
