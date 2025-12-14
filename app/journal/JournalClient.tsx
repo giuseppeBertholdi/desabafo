@@ -25,7 +25,7 @@ export default function JournalClient({ firstName }: { firstName: string }) {
   const [suggestion, setSuggestion] = useState<string | null>(null)
   const [showSuggestion, setShowSuggestion] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedMood, setSelectedMood] = useState<string | null>(null)
+  const [selectedMoods, setSelectedMoods] = useState<string[]>([])
   const [viewMode, setViewMode] = useState<'write' | 'read'>('write')
   const [showStats, setShowStats] = useState(false)
   const [insights, setInsights] = useState<string | null>(null)
@@ -535,7 +535,7 @@ export default function JournalClient({ firstName }: { firstName: string }) {
           user_id: user.id,
           content: currentEntry.trim(),
           tags: tags.length > 0 ? tags : [],
-          mood: selectedMood || null
+          mood: selectedMoods.length > 0 ? JSON.stringify(selectedMoods) : null
         })
         .select()
         .single()
@@ -544,7 +544,7 @@ export default function JournalClient({ firstName }: { firstName: string }) {
 
       setEntries(prev => [data, ...prev])
       setCurrentEntry('')
-      setSelectedMood(null)
+      setSelectedMoods([])
       setSuggestion(null)
       setShowSuggestion(false)
     } catch (error) {
@@ -592,10 +592,24 @@ export default function JournalClient({ firstName }: { firstName: string }) {
 
   const totalEntries = entries.length
   const avgWordsPerEntry = totalEntries > 0 ? Math.round(totalWords / totalEntries) : 0
+  // Função auxiliar para parsear moods (pode ser string ou JSON array)
+  const parseMoods = (mood: string | null | undefined): string[] => {
+    if (!mood) return []
+    try {
+      const parsed = JSON.parse(mood)
+      return Array.isArray(parsed) ? parsed : [mood]
+    } catch {
+      return [mood]
+    }
+  }
+
   const mostUsedMood = entries
     .filter(e => e.mood)
     .reduce((acc, entry) => {
-      acc[entry.mood!] = (acc[entry.mood!] || 0) + 1
+      const entryMoods = parseMoods(entry.mood)
+      entryMoods.forEach(m => {
+        acc[m] = (acc[m] || 0) + 1
+      })
       return acc
     }, {} as Record<string, number>)
   const topMood = Object.entries(mostUsedMood).sort((a, b) => b[1] - a[1])[0]
@@ -611,7 +625,7 @@ export default function JournalClient({ firstName }: { firstName: string }) {
     try {
       const recentEntries = entries.slice(0, 10).map(e => ({
         date: formatDate(e.created_at),
-        mood: e.mood,
+        mood: parseMoods(e.mood),
         content: e.content.substring(0, 200)
       }))
 
@@ -855,9 +869,16 @@ export default function JournalClient({ firstName }: { firstName: string }) {
                   >
                     <div className="flex items-center gap-2 mb-1">
                       {entry.mood && (
-                        <span className="text-base">
-                          {moods.find(m => m.value === entry.mood)?.emoji || '📝'}
-                        </span>
+                        <div className="flex items-center gap-1">
+                          {parseMoods(entry.mood).map((moodValue, idx) => {
+                            const mood = moods.find(m => m.value === moodValue)
+                            return mood ? (
+                              <span key={idx} className="text-base" title={mood.label}>
+                                {mood.emoji}
+                              </span>
+                            ) : null
+                          })}
+                        </div>
                       )}
                       <span className="text-xs text-gray-400 dark:text-gray-500">
                         {formatDate(entry.created_at)}
@@ -918,20 +939,29 @@ export default function JournalClient({ firstName }: { firstName: string }) {
                 <div className="mb-6">
                   <p className="text-xs text-gray-500 dark:text-gray-400 font-light mb-2">humor do dia</p>
                   <div className="flex flex-wrap gap-2">
-                    {moods.map((mood) => (
-                      <button
-                        key={mood.value}
-                        onClick={() => setSelectedMood(selectedMood === mood.value ? null : mood.value)}
-                        className={`px-3 py-1.5 rounded-full text-sm font-light transition-all cursor-pointer ${
-                          selectedMood === mood.value
-                            ? 'bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 border border-pink-300 dark:border-pink-700'
-                            : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-                        }`}
-                      >
-                        <span className="mr-1.5">{mood.emoji}</span>
-                        {mood.label}
-                      </button>
-                    ))}
+                    {moods.map((mood) => {
+                      const isSelected = selectedMoods.includes(mood.value)
+                      return (
+                        <button
+                          key={mood.value}
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedMoods(selectedMoods.filter(m => m !== mood.value))
+                            } else {
+                              setSelectedMoods([...selectedMoods, mood.value])
+                            }
+                          }}
+                          className={`px-3 py-1.5 rounded-full text-sm font-light transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 border border-pink-300 dark:border-pink-700'
+                              : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                          }`}
+                        >
+                          <span className="mr-1.5">{mood.emoji}</span>
+                          {mood.label}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 
@@ -1184,13 +1214,18 @@ export default function JournalClient({ firstName }: { firstName: string }) {
                         {formatDate(selectedEntryData.created_at)}
                       </h1>
                       {selectedEntryData.mood && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl">
-                            {moods.find(m => m.value === selectedEntryData.mood)?.emoji}
-                          </span>
-                          <span className="text-sm text-gray-500 dark:text-gray-400 font-light">
-                            {moods.find(m => m.value === selectedEntryData.mood)?.label}
-                          </span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {parseMoods(selectedEntryData.mood).map((moodValue, idx) => {
+                            const mood = moods.find(m => m.value === moodValue)
+                            return mood ? (
+                              <div key={idx} className="flex items-center gap-1">
+                                <span className="text-xl">{mood.emoji}</span>
+                                <span className="text-sm text-gray-500 dark:text-gray-400 font-light">
+                                  {mood.label}
+                                </span>
+                              </div>
+                            ) : null
+                          })}
                         </div>
                       )}
                     </div>
@@ -1385,9 +1420,13 @@ export default function JournalClient({ firstName }: { firstName: string }) {
               </div>
               <div className="space-y-4">
                 {moods.map(mood => {
-                  const count = entries.filter(e => e.mood === mood.value).length
-                  const percentage = entries.filter(e => e.mood).length > 0 
-                    ? (count / entries.filter(e => e.mood).length) * 100 
+                  const count = entries.reduce((acc, entry) => {
+                    const entryMoods = parseMoods(entry.mood)
+                    return acc + (entryMoods.includes(mood.value) ? 1 : 0)
+                  }, 0)
+                  const totalEntriesWithMoods = entries.filter(e => e.mood).length
+                  const percentage = totalEntriesWithMoods > 0 
+                    ? (count / totalEntriesWithMoods) * 100 
                     : 0
                   return (
                     <div key={mood.value} className="flex items-center gap-3">
