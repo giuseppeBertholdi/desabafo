@@ -36,6 +36,15 @@ export default function AccountClient() {
     remainingMinutes: 500
   })
   const [isLoadingVoiceUsage, setIsLoadingVoiceUsage] = useState(true)
+  const [referralStats, setReferralStats] = useState({
+    referralCode: null as string | null,
+    referralUrl: null as string | null,
+    totalReferrals: 0,
+    completedReferrals: 0,
+    remainingReferrals: 5
+  })
+  const [isLoadingReferral, setIsLoadingReferral] = useState(true)
+  const [copied, setCopied] = useState(false)
   
   // Personalização da IA
   const [isEditingPersonalization, setIsEditingPersonalization] = useState(false)
@@ -91,6 +100,7 @@ export default function AccountClient() {
     if (plan === 'pro') {
       loadVoiceUsage()
     }
+    loadReferralStats()
 
     // Verificar se veio do callback do Spotify
     const urlParams = new URLSearchParams(window.location.search)
@@ -597,6 +607,164 @@ export default function AccountClient() {
                 maxMinutes={voiceUsage.maxMinutes}
                 isLimitReached={voiceUsage.isLimitReached}
               />
+            </motion.div>
+          )}
+
+          {/* Sistema de Referência */}
+          {!isLoadingReferral && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="mb-12"
+            >
+              <div className="p-6 bg-gradient-to-br from-pink-50 to-purple-50 dark:from-pink-900/10 dark:to-purple-900/10 rounded-2xl border border-pink-200 dark:border-pink-800">
+                <div className="flex items-start gap-3 mb-4">
+                  <span className="text-3xl">🎁</span>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-light text-gray-900 dark:text-white mb-2">
+                      convide amigos e ganhe o plano Essential
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 font-light mb-4">
+                      compartilhe seu link com 5 amigos. quando eles se cadastrarem, você ganha o plano Essential de graça!
+                    </p>
+                  </div>
+                </div>
+
+                {referralStats.referralCode ? (
+                  <div className="space-y-4">
+                    {/* Progresso */}
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-gray-600 dark:text-gray-400 font-light">
+                          amigos cadastrados
+                        </span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                          {referralStats.completedReferrals} / 5
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div
+                          className="bg-pink-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${(referralStats.completedReferrals / 5) * 100}%` }}
+                        />
+                      </div>
+                      {referralStats.completedReferrals >= 5 && (
+                        <p className="text-sm text-green-600 dark:text-green-400 mt-2 font-light">
+                          🎉 parabéns! você ganhou o plano Essential!
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Link de convite */}
+                    <div>
+                      <label className="text-sm text-gray-600 dark:text-gray-400 font-light mb-2 block">
+                        seu link de convite
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          readOnly
+                          value={referralStats.referralUrl || ''}
+                          className="flex-1 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-light text-gray-900 dark:text-white focus:outline-none"
+                        />
+                        <button
+                          onClick={() => copyToClipboard(referralStats.referralUrl || '')}
+                          className="px-4 py-2 bg-pink-600 text-white rounded-lg font-light hover:bg-pink-700 transition-all text-sm whitespace-nowrap"
+                        >
+                          {copied ? 'copiado!' : 'copiar'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={generateReferralCode}
+                    className="w-full px-4 py-3 bg-pink-600 text-white rounded-lg font-light hover:bg-pink-700 transition-all"
+                  >
+                    gerar link de convite
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Sistema de Referência */}
+          {!isLoadingReferral && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="mb-12"
+            >
+              <div className="p-6 bg-gradient-to-br from-pink-50 to-purple-50 dark:from-pink-900/10 dark:to-purple-900/10 rounded-2xl border border-pink-200 dark:border-pink-800">
+                <div className="flex items-start gap-3 mb-4">
+                  <span className="text-3xl">🎁</span>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-light text-gray-900 dark:text-white mb-2">
+                      convide amigos e ganhe o plano Essential
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 font-light mb-4">
+                      compartilhe seu link com 5 amigos. quando eles se cadastrarem, você ganha o plano Essential de graça!
+                    </p>
+                  </div>
+                </div>
+
+                {referralStats.referralCode ? (
+                  <div className="space-y-4">
+                    {/* Progresso */}
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-gray-600 dark:text-gray-400 font-light">
+                          amigos cadastrados
+                        </span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                          {referralStats.completedReferrals} / 5
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div
+                          className="bg-pink-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${(referralStats.completedReferrals / 5) * 100}%` }}
+                        />
+                      </div>
+                      {referralStats.completedReferrals >= 5 && (
+                        <p className="text-sm text-green-600 dark:text-green-400 mt-2 font-light">
+                          🎉 parabéns! você ganhou o plano Essential!
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Link de convite */}
+                    <div>
+                      <label className="text-sm text-gray-600 dark:text-gray-400 font-light mb-2 block">
+                        seu link de convite
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          readOnly
+                          value={referralStats.referralUrl || ''}
+                          className="flex-1 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-light text-gray-900 dark:text-white focus:outline-none"
+                        />
+                        <button
+                          onClick={() => copyToClipboard(referralStats.referralUrl || '')}
+                          className="px-4 py-2 bg-pink-600 text-white rounded-lg font-light hover:bg-pink-700 transition-all text-sm whitespace-nowrap"
+                        >
+                          {copied ? 'copiado!' : 'copiar'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={generateReferralCode}
+                    className="w-full px-4 py-3 bg-pink-600 text-white rounded-lg font-light hover:bg-pink-700 transition-all"
+                  >
+                    gerar link de convite
+                  </button>
+                )}
+              </div>
             </motion.div>
           )}
 

@@ -32,6 +32,52 @@ export async function GET(request: Request) {
         return NextResponse.redirect(new URL('/login?error=no_session', request.url))
       }
 
+      // Processar referência se houver código na URL
+      const referralCode = requestUrl.searchParams.get('ref')
+      if (referralCode && session.user) {
+        try {
+          // Verificar se é um novo usuário (primeira vez fazendo login)
+          const { data: existingProfile } = await supabase
+            .from('user_profiles')
+            .select('id')
+            .eq('user_id', session.user.id)
+            .maybeSingle()
+
+          // Se não tem perfil, é um novo usuário - processar referência
+          if (!existingProfile) {
+            // Buscar referência pelo código
+            const { data: referral } = await supabase
+              .from('referrals')
+              .select('referrer_id, referred_id, completed_at')
+              .eq('referral_code', referralCode)
+              .maybeSingle()
+
+            if (referral && !referral.completed_at && referral.referrer_id !== session.user.id) {
+              // Verificar se já foi referido por alguém
+              const { data: alreadyReferred } = await supabase
+                .from('referrals')
+                .select('id')
+                .eq('referred_id', session.user.id)
+                .maybeSingle()
+
+              if (!alreadyReferred) {
+                // Atualizar referência
+                await supabase
+                  .from('referrals')
+                  .update({
+                    referred_id: session.user.id,
+                    completed_at: new Date().toISOString()
+                  })
+                  .eq('referral_code', referralCode)
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Erro ao processar referência:', error)
+          // Não bloquear o login se houver erro na referência
+        }
+      }
+
       // Tentar verificar onboarding (com fallback seguro)
       try {
         const { data: profile, error: profileError } = await supabase

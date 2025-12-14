@@ -31,10 +31,19 @@ export default function Login() {
   }, [router, supabase.auth])
 
   const handleGoogleLogin = async () => {
+    // Verificar se há código de referência na URL ou localStorage
+    const urlParams = new URLSearchParams(window.location.search)
+    const refCode = urlParams.get('ref') || localStorage.getItem('referralCode')
+    
+    let redirectTo = `${location.origin}/auth/callback`
+    if (refCode) {
+      redirectTo += `?ref=${refCode}`
+    }
+
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${location.origin}/auth/callback`
+        redirectTo
       }
     })
   }
