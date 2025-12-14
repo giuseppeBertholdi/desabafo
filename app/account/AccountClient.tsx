@@ -272,9 +272,16 @@ export default function AccountClient() {
           referralCode: data.referralCode,
           referralUrl: data.referralUrl
         }))
+        // Recarregar estatísticas após gerar
+        await loadReferralStats()
+      } else {
+        const errorData = await response.json()
+        console.error('Erro ao gerar código de referência:', errorData)
+        alert(errorData.error || 'Erro ao gerar código de referência. Verifique se a tabela referrals existe no banco de dados.')
       }
     } catch (error) {
       console.error('Erro ao gerar código de referência:', error)
+      alert('Erro ao gerar código de referência. Verifique sua conexão.')
     }
   }
 

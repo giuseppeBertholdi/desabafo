@@ -60,7 +60,11 @@ export async function POST() {
     if (insertError) {
       console.error('Erro ao criar código de referência:', insertError)
       return NextResponse.json(
-        { error: 'Erro ao gerar código de referência' },
+        { 
+          error: 'Erro ao gerar código de referência',
+          details: insertError.message,
+          code: insertError.code
+        },
         { status: 500 }
       )
     }
@@ -70,10 +74,13 @@ export async function POST() {
       referralCode,
       referralUrl: `${baseUrl}/invite/${referralCode}`
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro ao gerar código de referência:', error)
     return NextResponse.json(
-      { error: 'Erro ao gerar código de referência' },
+      { 
+        error: 'Erro ao gerar código de referência',
+        details: error?.message || 'Erro desconhecido'
+      },
       { status: 500 }
     )
   }
