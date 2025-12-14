@@ -29,11 +29,12 @@ export async function GET() {
       })
     }
 
-    // Contar referências totais e completadas
-    const { data: allReferrals, error: countError } = await supabase
+    // Contar referências completadas (apenas as que têm completed_at preenchido)
+    const { data: completedReferralsData, error: countError } = await supabase
       .from('referrals')
-      .select('completed_at')
+      .select('id')
       .eq('referrer_id', session.user.id)
+      .not('completed_at', 'is', null)
 
     if (countError) {
       console.error('Erro ao contar referências:', countError)
@@ -43,9 +44,16 @@ export async function GET() {
       )
     }
 
-    const totalReferrals = allReferrals?.length || 0
-    const completedReferrals = allReferrals?.filter(r => r.completed_at !== null).length || 0
+    const totalReferrals = 0 // Não precisamos do total, apenas das completadas
+    const completedReferrals = completedReferralsData?.length || 0
     const remainingReferrals = Math.max(0, 5 - completedReferrals)
+    
+    console.log('📊 Estatísticas de referência:', {
+      referrerId: session.user.id,
+      referralCode: referral?.referral_code,
+      completedReferrals,
+      remainingReferrals
+    })
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 

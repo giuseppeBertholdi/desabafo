@@ -28,8 +28,22 @@ CREATE POLICY "Users can view if they were referred"
   ON referrals FOR SELECT
   USING (auth.uid() = referred_id);
 
--- Política: Sistema pode inserir referências (via service role)
--- Nota: Inserções serão feitas via API com service role ou trigger
+-- Política: Permitir leitura pública de códigos de referência (para validação)
+-- Isso permite que a API valide códigos sem autenticação
+CREATE POLICY "Public can read referral codes for validation"
+  ON referrals FOR SELECT
+  USING (true);
+
+-- Política: Usuários podem inserir suas próprias referências
+CREATE POLICY "Users can insert their own referrals"
+  ON referrals FOR INSERT
+  WITH CHECK (auth.uid() = referrer_id);
+
+-- Política: Sistema pode atualizar referências (para completar quando alguém se cadastra)
+CREATE POLICY "Users can update referrals where they are referred"
+  ON referrals FOR UPDATE
+  USING (auth.uid() = referred_id)
+  WITH CHECK (auth.uid() = referred_id);
 
 -- Função para atualizar plano quando 5 referências são completadas
 CREATE OR REPLACE FUNCTION check_and_update_referral_plan()

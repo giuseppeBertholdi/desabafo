@@ -34,46 +34,70 @@ export async function GET(request: Request) {
 
       // Processar referência se houver código na URL
       const referralCode = requestUrl.searchParams.get('ref')
+      console.log('🔍 Referral code no callback:', referralCode, 'User ID:', session.user.id)
+      
       if (referralCode && session.user) {
         try {
-          // Verificar se é um novo usuário (primeira vez fazendo login)
-          const { data: existingProfile } = await supabase
-            .from('user_profiles')
+          // Usar service role para processar referência (bypass RLS)
+          const { createClient } = await import('@supabase/supabase-js')
+          const supabaseAdmin = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            {
+              auth: {
+                autoRefreshToken: false,
+                persistSession: false
+              }
+            }
+          )
+
+          // Verificar se já foi referido por alguém (antes de processar)
+          const { data: alreadyReferred } = await supabaseAdmin
+            .from('referrals')
             .select('id')
-            .eq('user_id', session.user.id)
+            .eq('referred_id', session.user.id)
             .maybeSingle()
 
-          // Se não tem perfil, é um novo usuário - processar referência
-          if (!existingProfile) {
+          if (alreadyReferred) {
+            console.log('⚠️ Usuário já foi referido por outro código')
+          } else {
             // Buscar referência pelo código
-            const { data: referral } = await supabase
+            const { data: referral, error: referralError } = await supabaseAdmin
               .from('referrals')
               .select('referrer_id, referred_id, completed_at')
-              .eq('referral_code', referralCode)
+              .eq('referral_code', referralCode.toUpperCase())
               .maybeSingle()
 
-            if (referral && !referral.completed_at && referral.referrer_id !== session.user.id) {
-              // Verificar se já foi referido por alguém
-              const { data: alreadyReferred } = await supabase
-                .from('referrals')
-                .select('id')
-                .eq('referred_id', session.user.id)
-                .maybeSingle()
-
-              if (!alreadyReferred) {
-                // Atualizar referência
-                await supabase
+            if (referralError) {
+              console.error('❌ Erro ao buscar referência:', referralError)
+            } else if (referral) {
+              // Verificar se o usuário não está tentando se referir a si mesmo
+              if (referral.referrer_id === session.user.id) {
+                console.log('⚠️ Usuário tentou usar seu próprio código de referência')
+              } else if (referral.completed_at) {
+                console.log('⚠️ Código de referência já foi usado')
+              } else {
+                // Atualizar referência usando service role
+                const { error: updateError } = await supabaseAdmin
                   .from('referrals')
                   .update({
                     referred_id: session.user.id,
                     completed_at: new Date().toISOString()
                   })
-                  .eq('referral_code', referralCode)
+                  .eq('referral_code', referralCode.toUpperCase())
+
+                if (updateError) {
+                  console.error('❌ Erro ao atualizar referência:', updateError)
+                } else {
+                  console.log('✅ Referência processada com sucesso! Usuário:', session.user.id, 'Referrer:', referral.referrer_id)
+                }
               }
+            } else {
+              console.log('⚠️ Código de referência não encontrado:', referralCode)
             }
           }
         } catch (error) {
-          console.error('Erro ao processar referência:', error)
+          console.error('❌ Erro ao processar referência:', error)
           // Não bloquear o login se houver erro na referência
         }
       }
